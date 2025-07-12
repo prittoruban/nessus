@@ -1,19 +1,26 @@
 {
-  "name": "nessus",
-  "version": "0.1.0",
+  "name": "nessus-vulnerability-scanner",
+  "version": "1.0.0",
+  "description": "A modern web application for uploading and analyzing Nessus vulnerability scan results",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "echo \"No tests specified\" && exit 0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.5",
+    "clsx": "^2.1.1",
     "csv-parse": "^6.0.0",
     "next": "15.3.5",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -23,7 +30,31 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.5",
+    "prettier": "^3.3.3",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "nessus",
+    "vulnerability",
+    "scanner",
+    "security",
+    "nextjs",
+    "supabase",
+    "typescript"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/nessus-vulnerability-scanner.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/nessus-vulnerability-scanner/issues"
+  },
+  "homepage": "https://github.com/yourusername/nessus-vulnerability-scanner#readme"
 }
