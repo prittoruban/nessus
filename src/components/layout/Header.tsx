@@ -8,7 +8,7 @@ export default function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <header className="bg-white shadow-sm border-b">
+    <header className="bg-white shadow-sm border-b relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4 md:py-6">
           <div className="flex items-center">
@@ -44,10 +44,10 @@ export default function Header() {
               Upload Scan
             </Link>
             <Link
-              href="/vulnerabilities"
+              href="/reports"
               className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
-              View Vulnerabilities
+              View Reports
             </Link>
           </nav>
 
@@ -74,22 +74,24 @@ export default function Header() {
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4">
-            <div className="space-y-1">
-              <Link
-                href="/upload"
-                className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Upload Scan
-              </Link>
-              <Link
-                href="/vulnerabilities"
-                className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                View Vulnerabilities
-              </Link>
+          <div className="absolute top-full left-0 right-0 md:hidden bg-white border-t border-gray-200 shadow-lg z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="space-y-1">
+                <Link
+                  href="/upload"
+                  className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Upload Scan
+                </Link>
+                <Link
+                  href="/reports"
+                  className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  View Reports
+                </Link>
+              </div>
             </div>
           </div>
         )}
