@@ -1,8 +1,8 @@
 // Environment configuration
 export const config = {
   supabase: {
-    url: "https://sluaqkqvglnbklqqxjds.supabase.co",
-    anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNsdWFxa3F2Z2xuYmtscXF4amRzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIxMzIzNjksImV4cCI6MjA2NzcwODM2OX0.RLtHtjOJmNpHE-JMjByGSkoRFsqO6QkbkID7xKriHHI",
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   },
   app: {
     name: "Nessus Vulnerability Scanner",
@@ -21,4 +21,4 @@ export const config = {
 } as const;
 
 // Type for the config
-export type Config = typeof config; 
+export type Config = typeof config;

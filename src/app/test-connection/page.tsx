@@ -20,10 +20,14 @@ export default function TestConnection() {
       if (error) {
         setStatus(`❌ Connection failed: ${error.message}`);
       } else {
-        setStatus(`✅ Connection successful! Found ${data?.length || 0} records`);
+        setStatus(
+          `✅ Connection successful! Found ${data?.length || 0} records`
+        );
       }
     } catch (err) {
-      setStatus(`❌ Error: ${err instanceof Error ? err.message : "Unknown error"}`);
+      setStatus(
+        `❌ Error: ${err instanceof Error ? err.message : "Unknown error"}`
+      );
     } finally {
       setLoading(false);
     }
@@ -33,12 +37,20 @@ export default function TestConnection() {
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">Supabase Connection Test</h1>
-        
+
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Environment Variables</h2>
           <div className="space-y-2 text-sm">
-            <p><strong>SUPABASE_URL:</strong> {process.env.NEXT_PUBLIC_SUPABASE_URL ? "✅ Set" : "❌ Missing"}</p>
-            <p><strong>SUPABASE_ANON_KEY:</strong> {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "✅ Set" : "❌ Missing"}</p>
+            <p>
+              <strong>SUPABASE_URL:</strong>{" "}
+              {process.env.NEXT_PUBLIC_SUPABASE_URL ? "✅ Set" : "❌ Missing"}
+            </p>
+            <p>
+              <strong>SUPABASE_ANON_KEY:</strong>{" "}
+              {process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+                ? "✅ Set"
+                : "❌ Missing"}
+            </p>
           </div>
         </div>
 
@@ -62,7 +74,10 @@ export default function TestConnection() {
           <h2 className="text-xl font-semibold mb-4">Next Steps</h2>
           <ul className="space-y-2 text-sm">
             <li>• If connection fails, check your Supabase project settings</li>
-            <li>• Make sure the 'vulnerabilities' table exists in your database</li>
+            <li>
+              • Make sure the &apos;vulnerabilities&apos; table exists in your
+              database
+            </li>
             <li>• Verify RLS policies allow read access</li>
             <li>• Check if your project URL and anon key are correct</li>
           </ul>
@@ -70,4 +85,4 @@ export default function TestConnection() {
       </div>
     </div>
   );
-} 
+}
