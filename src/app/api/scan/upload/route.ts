@@ -6,22 +6,27 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
+    const reportName = formData.get("reportName") as string;
+    const reportDescription = formData.get("reportDescription") as string;
 
-    // Use the new report service for upload
+    if (!file) {
+      return NextResponse.json(
+        { error: "No file provided" },
+        { status: 400 }
+      );
+    }
+
     const service = new ReportService();
     const result = await service.processUpload(
       file,
-      `Nessus Scan - ${new Date().toLocaleDateString()}`,
-      `Uploaded via legacy API from ${file.name}`
+      reportName || `Nessus Scan - ${new Date().toLocaleDateString()}`,
+      reportDescription || `Uploaded from ${file.name}`
     );
 
-    // Return response compatible with existing frontend
     return NextResponse.json({
+      success: true,
       message: "Upload successful",
-      inserted: result.inserted,
-      reportId: result.reportId,
-      skipped: result.skipped,
-      errors: result.errors,
+      data: result,
     });
   } catch (error) {
     return handleApiError(error);

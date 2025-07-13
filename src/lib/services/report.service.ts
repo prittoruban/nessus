@@ -241,9 +241,16 @@ export class ReportService {
    * Transform CSV row to vulnerability format
    */
   private transformCsvRow(row: CsvRow): CreateVulnerability {
+    // Handle CVE field - use CVE if available, fallback to Plugin ID, or "N/A"
+    const cveValue = row["CVE"]?.trim() || row["Plugin ID"]?.trim() || "";
+    const cve = cveValue && cveValue !== "" ? cveValue : "N/A";
+    
+    // Handle IP address field - try multiple column names and clean the value
+    const ipAddress = (row["IP Address"] || row["IP"] || row["Host"] || "").toString().trim();
+    
     return {
-      ip_address: row["IP Address"] || row["IP"] || "",
-      cve: row["CVE"] || row["Plugin ID"] || "",
+      ip_address: ipAddress || "Unknown",
+      cve: cve,
       severity: this.normalizeSeverity(row["Severity"] || row["Risk"] || "medium"),
       plugin_name: row["Plugin Name"] || row["Name"] || "",
       description: row["Description"] || row["Synopsis"] || "",

@@ -1,238 +1,359 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
-import { supabase, testSupabaseConnection } from "@/lib/supabase";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/Card";
+import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
-interface Stats {
+interface DashboardStats {
+  totalReports: number;
   totalVulnerabilities: number;
   highSeverity: number;
-  mediumSeverity: number;
-  lowSeverity: number;
+  uniqueIPs: number;
+  recentReports: Array<{
+    id: string;
+    name: string;
+    status: string;
+    created_at: string;
+    total_vulnerabilities: number;
+  }>;
 }
 
-export default function Home() {
-  const [stats, setStats] = useState<Stats>({
+export default function HomePage() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalReports: 0,
     totalVulnerabilities: 0,
     highSeverity: 0,
-    mediumSeverity: 0,
-    lowSeverity: 0,
+    uniqueIPs: 0,
+    recentReports: []
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "failed">("checking");
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        setError(null);
-        
-        // Get total count
-        const { count: total } = await supabase
+        setLoading(true);
+
+        // Fetch reports with vulnerability counts
+        const { data: reportsData, error: reportsError } = await supabase
+          .from("reports")
+          .select(`
+            id,
+            name,
+            status,
+            created_at,
+            total_vulnerabilities
+          `)
+          .order("created_at", { ascending: false })
+          .limit(5);
+
+        if (reportsError) {
+          console.error("Error fetching reports:", reportsError);
+        }
+
+        // Fetch total counts
+        const { count: totalReports } = await supabase
+          .from("reports")
+          .select("*", { count: "exact", head: true });
+
+        const { count: totalVulnerabilities } = await supabase
           .from("vulnerabilities")
           .select("*", { count: "exact", head: true });
 
-        // Get severity counts
-        const { data: severityData } = await supabase
+        const { count: highSeverity } = await supabase
           .from("vulnerabilities")
-          .select("severity");
+          .select("*", { count: "exact", head: true })
+          .eq("severity", "high");
 
-        const severityCounts = severityData?.reduce((acc, item) => {
-          const severity = item.severity?.toLowerCase();
-          if (severity === "high") acc.highSeverity++;
-          else if (severity === "medium") acc.mediumSeverity++;
-          else if (severity === "low") acc.lowSeverity++;
-          return acc;
-        }, { highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 }) || { highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 };
+        // Fetch unique IPs count
+        const { data: uniqueIPsData } = await supabase
+          .from("vulnerabilities")
+          .select("ip_address");
+
+        const uniqueIPs = uniqueIPsData 
+          ? new Set(uniqueIPsData.map(v => v.ip_address)).size 
+          : 0;
 
         setStats({
-          totalVulnerabilities: total || 0,
-          ...severityCounts,
+          totalReports: totalReports || 0,
+          totalVulnerabilities: totalVulnerabilities || 0,
+          highSeverity: highSeverity || 0,
+          uniqueIPs,
+          recentReports: reportsData || []
         });
       } catch (error) {
-        console.error("Error fetching stats:", error);
-        setError("Failed to load vulnerability data");
+        console.error("Error fetching dashboard stats:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    const checkConnectionAndFetchStats = async () => {
-      try {
-        // First check connection
-        const connectionResult = await testSupabaseConnection();
-        if (!connectionResult.success) {
-          setConnectionStatus("failed");
-          setError(connectionResult.error || "Failed to connect to database");
-          setLoading(false);
-          return;
-        }
-
-        setConnectionStatus("connected");
-        await fetchStats();
-      } catch {
-        setConnectionStatus("failed");
-        setError("Failed to initialize application");
-        setLoading(false);
-      }
-    };
-
-    checkConnectionAndFetchStats();
+    fetchStats();
   }, []);
 
-  const StatCard = ({ 
-    title, 
-    value, 
-    icon, 
-    color 
-  }: { 
-    title: string; 
-    value: number; 
-    icon: React.ReactNode; 
-    color: string; 
-  }) => (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center">
-          <div className={`flex-shrink-0 w-8 h-8 ${color} rounded-md flex items-center justify-center`}>
-            {icon}
-          </div>
-          <div className="ml-5 w-0 flex-1">
-            <dl>
-              <dt className="text-sm font-medium text-gray-500 truncate">
-                {title}
-              </dt>
-              <dd className="text-lg font-medium text-gray-900">
-                {loading ? "Loading..." : value.toLocaleString()}
-              </dd>
-            </dl>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "completed":
+        return "bg-green-100 text-green-800";
+      case "processing":
+        return "bg-yellow-100 text-yellow-800";
+      case "failed":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-
+      
       <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
         <div className="px-4 py-6 sm:px-0">
-          {/* Connection Status */}
-          {connectionStatus === "failed" && (
-            <Card className="mb-6 border-red-200 bg-red-50">
-              <CardContent className="p-4">
-                <div className="flex">
+          {/* Welcome Section */}
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Nessus Vulnerability Dashboard</h1>
+            <p className="text-gray-600">
+              Comprehensive vulnerability management and analysis platform
+            </p>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
                   <div className="flex-shrink-0">
-                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">Connection Error</h3>
-                    <div className="mt-2 text-sm text-red-700">
-                      <p>{error}</p>
+                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
                     </div>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Total Reports</dt>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? "..." : stats.totalReports}
+                      </dd>
+                    </dl>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              title="Total Vulnerabilities"
-              value={stats.totalVulnerabilities}
-              icon={
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              }
-              color="bg-blue-500"
-            />
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.996-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Total Vulnerabilities</dt>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? "..." : stats.totalVulnerabilities}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <StatCard
-              title="High Severity"
-              value={stats.highSeverity}
-              icon={
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              }
-              color="bg-red-500"
-            />
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">High Severity</dt>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? "..." : stats.highSeverity}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-            <StatCard
-              title="Medium Severity"
-              value={stats.mediumSeverity}
-              icon={
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              }
-              color="bg-yellow-500"
-            />
-
-            <StatCard
-              title="Low Severity"
-              value={stats.lowSeverity}
-              icon={
-                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              }
-              color="bg-green-500"
-            />
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                      <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="ml-5 w-0 flex-1">
+                    <dl>
+                      <dt className="text-sm font-medium text-gray-500 truncate">Unique IPs</dt>
+                      <dd className="text-lg font-medium text-gray-900">
+                        {loading ? "..." : stats.uniqueIPs}
+                      </dd>
+                    </dl>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Quick Actions */}
-          <div className="mt-8">
-            <h2 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Link href="/upload">
-                <Card className="relative group hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div>
-                      <span className="rounded-lg inline-flex p-3 bg-blue-50 text-blue-700 ring-4 ring-white">
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                        </svg>
-                      </span>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-lg font-medium">Upload New Scan</h3>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Upload a Nessus CSV file to analyze vulnerabilities
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload New Scan</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Upload and process Nessus CSV files with automatic vulnerability detection and classification.
+                    </p>
+                    <Link
+                      href="/upload"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      Upload Scan
+                    </Link>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <svg className="w-12 h-12 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
-              <Link href="/vulnerabilities">
-                <Card className="relative group hover:shadow-md transition-shadow cursor-pointer">
-                  <CardContent className="p-6">
-                    <div>
-                      <span className="rounded-lg inline-flex p-3 bg-green-50 text-green-700 ring-4 ring-white">
-                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                        </svg>
-                      </span>
-                    </div>
-                    <div className="mt-4">
-                      <h3 className="text-lg font-medium">View Vulnerabilities</h3>
-                      <p className="mt-2 text-sm text-gray-500">
-                        Browse and analyze all discovered vulnerabilities
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            </div>
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Manage Reports</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      View, filter, and manage all vulnerability scan reports with detailed analysis and insights.
+                    </p>
+                    <Link
+                      href="/reports"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700"
+                    >
+                      View Reports
+                    </Link>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <svg className="w-12 h-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyze Vulnerabilities</h3>
+                    <p className="text-sm text-gray-600 mb-4">
+                      Browse all vulnerabilities with IP-based summaries and CVE-based analysis for comprehensive insights.
+                    </p>
+                    <Link
+                      href="/vulnerabilities"
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
+                    >
+                      View Vulnerabilities
+                    </Link>
+                  </div>
+                  <div className="flex-shrink-0">
+                    <svg className="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.996-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+
+          {/* Recent Reports */}
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Reports</h3>
+                <Link
+                  href="/reports"
+                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                >
+                  View all reports →
+                </Link>
+              </div>
+              
+              {loading ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                  <p className="mt-2 text-gray-500">Loading recent reports...</p>
+                </div>
+              ) : stats.recentReports.length === 0 ? (
+                <div className="text-center py-8">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No reports yet</h3>
+                  <p className="mt-1 text-sm text-gray-500">Get started by uploading your first Nessus scan.</p>
+                  <div className="mt-6">
+                    <Link
+                      href="/upload"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+                    >
+                      Upload Scan
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {stats.recentReports.map((report) => (
+                    <div key={report.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <Link
+                            href={`/reports/${report.id}`}
+                            className="text-sm font-medium text-gray-900 hover:text-blue-600"
+                          >
+                            {report.name}
+                          </Link>
+                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                            {report.status}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500">
+                          <span>{report.total_vulnerabilities || 0} vulnerabilities</span>
+                          <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <Link
+                          href={`/reports/${report.id}`}
+                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                        >
+                          View details →
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>
