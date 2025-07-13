@@ -137,25 +137,25 @@ export default function ReportsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="py-6">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="mb-6 md:mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <div className="flex-1">
                 <div className="flex items-center mb-4">
                   <Link href="/" className="text-gray-500 hover:text-gray-700 mr-4">
                     ← Back to Dashboard
                   </Link>
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">Scan Reports</h1>
-                <p className="mt-2 text-gray-600">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Scan Reports</h1>
+                <p className="mt-2 text-sm sm:text-base text-gray-600">
                   Manage and analyze your Nessus vulnerability scan reports.
                 </p>
               </div>
               <Link
                 href="/upload"
-                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 text-center"
               >
                 Upload New Scan
               </Link>
@@ -176,7 +176,7 @@ export default function ReportsPage() {
                     placeholder="Search by name, file, or description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
                   />
                 </div>
                 
@@ -188,7 +188,7 @@ export default function ReportsPage() {
                     id="status"
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                   >
                     <option value="all">All Status</option>
                     <option value="completed">Completed</option>
@@ -204,7 +204,7 @@ export default function ReportsPage() {
                       setStatusFilter("all");
                       setCurrentPage(1);
                     }}
-                    className="w-full bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
+                    className="w-full bg-gray-600 !text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800"
                   >
                     Clear Filters
                   </button>
@@ -237,29 +237,29 @@ export default function ReportsPage() {
             </Card>
           ) : (
             <>
-              <div className="grid gap-6">
+              <div className="grid gap-4 md:gap-6">
                 {filteredReports.map((report) => (
                   <Card key={report.id} className="hover:shadow-lg transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between">
+                    <CardContent className="p-4 md:p-6">
+                      <div className="flex flex-col lg:flex-row lg:items-start justify-between space-y-4 lg:space-y-0">
                         <div className="flex-1">
-                          <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">
+                          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900 break-words">
                               {report.name}
                             </h3>
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)}`}>
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)} w-fit`}>
                               {report.status}
                             </span>
                           </div>
                           
                           {report.description && (
-                            <p className="text-gray-600 mb-3">{report.description}</p>
+                            <p className="text-gray-600 mb-3 break-words">{report.description}</p>
                           )}
                           
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             <div>
                               <p className="text-sm text-gray-500">File</p>
-                              <p className="text-sm font-medium">{report.file_name}</p>
+                              <p className="text-sm font-medium break-words">{report.file_name}</p>
                               <p className="text-xs text-gray-400">{formatFileSize(report.file_size)}</p>
                             </div>
                             <div>
@@ -284,7 +284,7 @@ export default function ReportsPage() {
 
                           {/* Severity Breakdown */}
                           {report.status === "completed" && (
-                            <div className="grid grid-cols-4 gap-2 mb-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
                               <div className="bg-red-50 p-2 rounded text-center">
                                 <p className="text-xs text-red-600">High</p>
                                 <p className="text-sm font-bold text-red-800">{report.high_count}</p>
@@ -307,22 +307,22 @@ export default function ReportsPage() {
                       </div>
 
                       {/* Actions */}
-                      <div className="flex justify-end space-x-2 mt-4 pt-4 border-t">
+                      <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 mt-4 pt-4 border-t">
                         <Link
                           href={`/reports/${report.id}`}
-                          className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700"
+                          className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 text-center"
                         >
                           View Details
                         </Link>
                         <Link
                           href={`/vulnerabilities?report=${report.id}`}
-                          className="bg-gray-600 text-white px-3 py-1 rounded text-sm hover:bg-gray-700"
+                          className="bg-gray-600 text-white px-3 py-2 rounded text-sm hover:bg-gray-700 text-center"
                         >
                           View Vulnerabilities
                         </Link>
                         <button
                           onClick={() => deleteReport(report.id)}
-                          className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
+                          className="bg-red-600 text-white px-3 py-2 rounded text-sm hover:bg-red-700"
                         >
                           Delete
                         </button>

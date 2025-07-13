@@ -16,6 +16,7 @@ export const metadata: Metadata = {
   title: "Nessus Scan Manager",
   description:
     "Manage and analyze Nessus vulnerability scans. Upload, view, and manage your vulnerability reports with ease. Automated processing and analysis of Nessus CSV files.",
+  viewport: "width=device-width, initial-scale=1",
 };
 
 export default function RootLayout({
@@ -24,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html className="!scroll-smooth" lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

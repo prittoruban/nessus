@@ -164,37 +164,37 @@ function VulnerabilitiesContent() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <div className="py-6">
           {/* Header */}
-          <div className="mb-8">
-            <div className="flex items-center justify-between">
-              <div>
+          <div className="mb-6 md:mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
+              <div className="flex-1">
                 <div className="flex items-center mb-4">
                   <Link href={reportFilter ? `/reports/${reportFilter}` : "/"} className="text-gray-500 hover:text-gray-700 mr-4">
                     ← Back to {reportFilter ? "Report" : "Dashboard"}
                   </Link>
                 </div>
-                <h1 className="text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Vulnerabilities
                   {reportName && (
-                    <span className="text-lg font-normal text-gray-600 ml-2">
+                    <span className="block sm:inline text-base sm:text-lg font-normal text-gray-600 sm:ml-2">
                       - {reportName}
                     </span>
                   )}
                 </h1>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-sm sm:text-base text-gray-600">
                   {reportFilter 
                     ? "Vulnerabilities from this specific report"
                     : "Browse and analyze vulnerability data from all scans"
                   }
                 </p>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                 <button
                   onClick={handleExportPDF}
                   disabled={exportingPDF || vulnerabilities.length === 0}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                 >
                   {exportingPDF ? (
                     <>
@@ -216,14 +216,14 @@ function VulnerabilitiesContent() {
                 {!reportFilter && (
                   <Link
                     href="/reports"
-                    className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
+                    className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 text-center"
                   >
                     View Reports
                   </Link>
                 )}
                 <Link
                   href="/upload"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700"
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 text-center"
                 >
                   Upload New Scan
                 </Link>
@@ -233,19 +233,19 @@ function VulnerabilitiesContent() {
 
           {/* Tabs */}
           <div className="mb-6">
-            <nav className="flex space-x-8" aria-label="Tabs">
-              <button className="border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">
+            <nav className="flex flex-wrap space-x-4 sm:space-x-8" aria-label="Tabs">
+              <button className="border-b-2 border-blue-500 py-2 px-1 text-sm font-medium !text-blue-600 whitespace-nowrap">
                 All Vulnerabilities
               </button>
               <button 
                 onClick={() => document.getElementById('ip-summary')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
+                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
               >
                 IP Summary ({Object.keys(ipSummary).length})
               </button>
               <button 
                 onClick={() => document.getElementById('cve-summary')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700"
+                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
               >
                 CVE Analysis ({Object.keys(cveSummary).length})
               </button>
@@ -266,7 +266,7 @@ function VulnerabilitiesContent() {
                     placeholder="Search by IP, CVE, or description..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900 placeholder-gray-500"
                   />
                 </div>
                 
@@ -278,7 +278,7 @@ function VulnerabilitiesContent() {
                     id="severity"
                     value={severityFilter}
                     onChange={(e) => setSeverityFilter(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                   >
                     <option value="all">All Severities</option>
                     <option value="high">High</option>
@@ -295,7 +295,7 @@ function VulnerabilitiesContent() {
                       setSeverityFilter("all");
                       setCurrentPage(1);
                     }}
-                    className="w-full bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700"
+                    className="w-full bg-gray-600 !text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800"
                   >
                     Clear Filters
                   </button>
@@ -306,7 +306,7 @@ function VulnerabilitiesContent() {
 
           {/* Results */}
           <Card className="mb-8">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               {loading ? (
                 <div className="text-center py-8">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
@@ -327,22 +327,22 @@ function VulnerabilitiesContent() {
                   <div className="space-y-4">
                     {filteredVulnerabilities.map((vuln, index) => (
                       <div key={vuln.id || index} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                           <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(vuln.severity)}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(vuln.severity)} w-fit`}>
                                 {vuln.severity}
                               </span>
-                              <h4 className="text-sm font-medium text-gray-900">{vuln.cve}</h4>
+                              <h4 className="text-sm font-medium text-gray-900 break-words">{vuln.cve}</h4>
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-4">
                               <div>
-                                <p className="text-sm text-gray-600">
+                                <p className="text-sm text-gray-600 break-words">
                                   <span className="font-medium">IP Address:</span> {vuln.ip_address}
                                 </p>
                                 {vuln.plugin_name && (
-                                  <p className="text-sm text-gray-600">
+                                  <p className="text-sm text-gray-600 break-words">
                                     <span className="font-medium">Plugin:</span> {vuln.plugin_name}
                                   </p>
                                 )}
@@ -356,7 +356,7 @@ function VulnerabilitiesContent() {
                             </div>
                             
                             {vuln.description && (
-                              <p className="text-sm text-gray-600 mt-2 line-clamp-2">
+                              <p className="text-sm text-gray-600 mt-2 line-clamp-3 break-words">
                                 {vuln.description}
                               </p>
                             )}
@@ -372,7 +372,7 @@ function VulnerabilitiesContent() {
 
           {/* IP-based Summary */}
           <Card id="ip-summary" className="mb-8">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <h3 className="text-lg font-semibold mb-4">IP-based Summary</h3>
               {Object.keys(ipSummary).length === 0 ? (
                 <p className="text-gray-500">No IP data available.</p>
@@ -382,13 +382,13 @@ function VulnerabilitiesContent() {
                     .sort(([,a], [,b]) => b.total - a.total)
                     .map(([ip, stats]) => (
                       <div key={ip} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h4 className="font-medium text-gray-900">{ip}</h4>
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2 space-y-1 sm:space-y-0">
+                          <h4 className="font-medium text-gray-900 break-words">{ip}</h4>
                           <span className="text-sm text-gray-500">
                             {stats.total} vulnerabilities
                           </span>
                         </div>
-                        <div className="grid grid-cols-4 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                           <div className="bg-red-50 p-2 rounded text-center">
                             <p className="text-xs text-red-600">High</p>
                             <p className="text-sm font-bold text-red-800">{stats.high}</p>
@@ -415,7 +415,7 @@ function VulnerabilitiesContent() {
 
           {/* CVE-based Analysis */}
           <Card id="cve-summary" className="mb-8">
-            <CardContent className="p-6">
+            <CardContent className="p-4 md:p-6">
               <h3 className="text-lg font-semibold mb-4">CVE-based Analysis</h3>
               {Object.keys(cveSummary).length === 0 ? (
                 <p className="text-gray-500">No CVE data available.</p>
@@ -425,18 +425,18 @@ function VulnerabilitiesContent() {
                     .sort(([,a], [,b]) => b.count - a.count)
                     .map(([cve, data]) => (
                       <div key={cve} className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-start justify-between">
+                        <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                           <div className="flex-1">
-                            <div className="flex items-center space-x-3 mb-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(data.severity)}`}>
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
+                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(data.severity)} w-fit`}>
                                 {data.severity}
                               </span>
-                              <h4 className="font-medium text-gray-900">{cve}</h4>
+                              <h4 className="font-medium text-gray-900 break-words">{cve}</h4>
                             </div>
                             {data.plugin_name && (
-                              <p className="text-sm text-gray-600 mb-2">{data.plugin_name}</p>
+                              <p className="text-sm text-gray-600 mb-2 break-words">{data.plugin_name}</p>
                             )}
-                            <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-500">
                               <span>{data.count} occurrences</span>
                               <span>{data.ips.size} affected IPs</span>
                             </div>

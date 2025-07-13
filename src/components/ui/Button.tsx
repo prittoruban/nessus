@@ -23,12 +23,12 @@ export function Button({
     primary: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:ring-blue-500",
     secondary: "bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500",
     danger: "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500",
-    ghost: "hover:bg-gray-100 hover:text-gray-900 focus-visible:ring-gray-500",
+    ghost: "text-gray-700 hover:bg-gray-100 hover:text-gray-900 focus-visible:ring-gray-500",
   };
   
   const sizes = {
-    sm: "h-8 px-3 text-sm",
-    md: "h-10 px-4 py-2",
+    sm: "h-9 px-3 text-sm sm:h-8",
+    md: "h-11 px-4 py-2 text-base sm:h-10 sm:text-sm",
     lg: "h-12 px-6 text-lg",
   };
 
