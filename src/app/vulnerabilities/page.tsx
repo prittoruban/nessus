@@ -1,14 +1,15 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/Card";
 import { supabase } from "@/lib/supabase";
 import { Vulnerability } from "@/types/vulnerability";
 import Link from "next/link";
+import { PDFService } from "@/lib/services/pdf.service";
 
-export default function VulnerabilitiesPage() {
+function VulnerabilitiesContent() {
   const searchParams = useSearchParams();
   const reportFilter = searchParams.get('report');
   
@@ -19,6 +20,7 @@ export default function VulnerabilitiesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [reportName, setReportName] = useState("");
+  const [exportingPDF, setExportingPDF] = useState(false);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -117,6 +119,47 @@ export default function VulnerabilitiesPage() {
     return acc;
   }, {} as Record<string, { severity: string; plugin_name?: string; count: number; ips: Set<string> }>);
 
+  const handleExportPDF = async () => {
+    if (!vulnerabilities.length) return;
+    
+    try {
+      setExportingPDF(true);
+      
+      const pdfService = new PDFService();
+      
+      // Create a mock report data for vulnerabilities export
+      const reportData = {
+        id: reportFilter || "all-vulnerabilities",
+        name: reportName || "All Vulnerabilities Report",
+        description: reportFilter ? `Vulnerabilities from ${reportName}` : "Complete vulnerability analysis",
+        file_name: "vulnerabilities_export.csv",
+        total_vulnerabilities: vulnerabilities.length,
+        high_count: vulnerabilities.filter(v => v.severity === 'high').length,
+        medium_count: vulnerabilities.filter(v => v.severity === 'medium').length,
+        low_count: vulnerabilities.filter(v => v.severity === 'low').length,
+        info_count: vulnerabilities.filter(v => v.severity === 'info').length,
+        upload_date: new Date().toISOString(),
+        processed_date: new Date().toISOString(),
+      };
+
+      pdfService.generateVulnerabilityReport(reportData, vulnerabilities, {
+        includeIPSummary: true,
+        includeCVESummary: true,
+        includeVulnerabilityDetails: true,
+      });
+
+      const filename = reportFilter 
+        ? `${reportName.replace(/[^a-zA-Z0-9]/g, '_')}_vulnerabilities.pdf`
+        : 'all_vulnerabilities_report.pdf';
+      pdfService.download(filename);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF report. Please try again.");
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
@@ -148,6 +191,28 @@ export default function VulnerabilitiesPage() {
                 </p>
               </div>
               <div className="flex space-x-3">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={exportingPDF || vulnerabilities.length === 0}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {exportingPDF ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Export PDF
+                    </>
+                  )}
+                </button>
                 {!reportFilter && (
                   <Link
                     href="/reports"
@@ -406,12 +471,12 @@ export default function VulnerabilitiesPage() {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Page <span className="font-medium">{currentPage}</span> of{" "}
+                    Showing page <span className="font-medium">{currentPage}</span> of{" "}
                     <span className="font-medium">{totalPages}</span>
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                     <button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
@@ -434,5 +499,23 @@ export default function VulnerabilitiesPage() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function VulnerabilitiesPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50">
+        <Header />
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-gray-500">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <VulnerabilitiesContent />
+    </Suspense>
   );
 }

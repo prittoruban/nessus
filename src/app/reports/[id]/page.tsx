@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/Card";
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { PDFService } from "@/lib/services/pdf.service";
 
 interface Report {
   id: string;
@@ -51,6 +52,7 @@ export default function ReportDetailsPage() {
   const [error, setError] = useState("");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [exportingPDF, setExportingPDF] = useState(false);
 
   useEffect(() => {
     const fetchReportDetails = async () => {
@@ -123,6 +125,43 @@ export default function ReportDetailsPage() {
     return matchesSeverity && matchesSearch;
   });
 
+  const handleExportPDF = async () => {
+    if (!report || !vulnerabilities.length) return;
+    
+    try {
+      setExportingPDF(true);
+      
+      const pdfService = new PDFService();
+      const reportData = {
+        id: report.id,
+        name: report.name,
+        description: report.description,
+        file_name: report.file_name,
+        total_vulnerabilities: report.total_vulnerabilities,
+        high_count: report.high_count,
+        medium_count: report.medium_count,
+        low_count: report.low_count,
+        info_count: report.info_count,
+        upload_date: report.upload_date,
+        processed_date: report.processed_date,
+      };
+
+      pdfService.generateVulnerabilityReport(reportData, vulnerabilities, {
+        includeIPSummary: true,
+        includeCVESummary: true,
+        includeVulnerabilityDetails: true,
+      });
+
+      const filename = `${report.name.replace(/[^a-zA-Z0-9]/g, '_')}_report.pdf`;
+      pdfService.download(filename);
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF report. Please try again.");
+    } finally {
+      setExportingPDF(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
@@ -187,9 +226,33 @@ export default function ReportDetailsPage() {
                 <h1 className="text-3xl font-bold text-gray-900">{report.name}</h1>
                 <p className="mt-2 text-gray-600">{report.description}</p>
               </div>
-              <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(report.status)}`}>
-                {report.status}
-              </span>
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={handleExportPDF}
+                  disabled={exportingPDF}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                >
+                  {exportingPDF ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Export PDF
+                    </>
+                  )}
+                </button>
+                <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(report.status)}`}>
+                  {report.status}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -356,6 +419,21 @@ export default function ReportDetailsPage() {
                 <h3 className="text-lg font-semibold">
                   Vulnerabilities ({filteredVulnerabilities.length})
                 </h3>
+                
+                <button
+                  onClick={handleExportPDF}
+                  disabled={exportingPDF}
+                  className="ml-4 inline-flex items-center px-3 py-2 text-sm font-medium rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                >
+                  {exportingPDF ? (
+                    <svg className="animate-spin h-5 w-5 mr-3 -ml-1" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4zm16 0a8 8 0 01-8 8v-8h8z"></path>
+                    </svg>
+                  ) : (
+                    "Export to PDF"
+                  )}
+                </button>
               </div>
               
               {filteredVulnerabilities.length === 0 ? (

@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# temporary files
+*_old.*
+*_new.*
+*_backup.*
+*.tmp
+*.temp
+*~
