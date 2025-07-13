@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/Card";
 import Link from "next/link";
 
@@ -78,7 +77,6 @@ export default function UploadPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       
       <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="py-6">
