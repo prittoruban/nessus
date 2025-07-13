@@ -15,41 +15,41 @@ export default function VulnerabilitiesPage() {
   const itemsPerPage = 20;
 
   useEffect(() => {
+    const fetchVulnerabilities = async () => {
+      try {
+        setLoading(true);
+        let query = supabase
+          .from("vulnerabilities")
+          .select("*", { count: "exact" });
+
+        // Apply severity filter
+        if (severityFilter !== "all") {
+          query = query.eq("severity", severityFilter);
+        }
+
+        // Apply pagination
+        const from = (currentPage - 1) * itemsPerPage;
+        const to = from + itemsPerPage - 1;
+        query = query.range(from, to).order("created_at", { ascending: false });
+
+        const { data, error, count } = await query;
+
+        if (error) {
+          console.error("Error fetching vulnerabilities:", error);
+          return;
+        }
+
+        setVulnerabilities(data || []);
+        setTotalPages(Math.ceil((count || 0) / itemsPerPage));
+      } catch (error) {
+        console.error("Error:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchVulnerabilities();
   }, [currentPage, severityFilter]);
-
-  const fetchVulnerabilities = async () => {
-    try {
-      setLoading(true);
-      let query = supabase
-        .from("vulnerabilities")
-        .select("*", { count: "exact" });
-
-      // Apply severity filter
-      if (severityFilter !== "all") {
-        query = query.eq("severity", severityFilter);
-      }
-
-      // Apply pagination
-      const from = (currentPage - 1) * itemsPerPage;
-      const to = from + itemsPerPage - 1;
-      query = query.range(from, to).order("created_at", { ascending: false });
-
-      const { data, error, count } = await query;
-
-      if (error) {
-        console.error("Error fetching vulnerabilities:", error);
-        return;
-      }
-
-      setVulnerabilities(data || []);
-      setTotalPages(Math.ceil((count || 0) / itemsPerPage));
-    } catch (error) {
-      console.error("Error:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredVulnerabilities = vulnerabilities.filter((vuln) =>
     vuln.ip_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||

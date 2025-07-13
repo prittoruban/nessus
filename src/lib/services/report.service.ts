@@ -98,10 +98,10 @@ export class ReportService {
       // Insert valid vulnerabilities with report ID
       let inserted = 0;
       if (vulnerabilities.length > 0 && reportId) {
-        // Add report_id to each vulnerability
+        // Add report_id to each vulnerability (reportId is guaranteed to be string here)
         const vulnerabilitiesWithReportId = vulnerabilities.map(vuln => ({
           ...vuln,
-          report_id: reportId, // reportId is guaranteed to be string here
+          report_id: reportId as string, // Type assertion since we checked reportId is not null
         }));
 
         const result = await this.vulnerabilityRepository.createMany(vulnerabilitiesWithReportId);

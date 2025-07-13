@@ -3,10 +3,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase, testSupabaseConnection } from "@/lib/supabase";
-import { config } from "@/lib/config";
 import { Header } from "@/components/layout/Header";
 import { Card, CardContent } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 
 interface Stats {
   totalVulnerabilities: number;
@@ -27,62 +25,62 @@ export default function Home() {
   const [connectionStatus, setConnectionStatus] = useState<"checking" | "connected" | "failed">("checking");
 
   useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setError(null);
+        
+        // Get total count
+        const { count: total } = await supabase
+          .from("vulnerabilities")
+          .select("*", { count: "exact", head: true });
+
+        // Get severity counts
+        const { data: severityData } = await supabase
+          .from("vulnerabilities")
+          .select("severity");
+
+        const severityCounts = severityData?.reduce((acc, item) => {
+          const severity = item.severity?.toLowerCase();
+          if (severity === "high") acc.highSeverity++;
+          else if (severity === "medium") acc.mediumSeverity++;
+          else if (severity === "low") acc.lowSeverity++;
+          return acc;
+        }, { highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 }) || { highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 };
+
+        setStats({
+          totalVulnerabilities: total || 0,
+          ...severityCounts,
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+        setError("Failed to load vulnerability data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const checkConnectionAndFetchStats = async () => {
+      try {
+        // First check connection
+        const connectionResult = await testSupabaseConnection();
+        if (!connectionResult.success) {
+          setConnectionStatus("failed");
+          setError(connectionResult.error || "Failed to connect to database");
+          setLoading(false);
+          return;
+        }
+
+        setConnectionStatus("connected");
+        await fetchStats();
+      } catch {
+        setConnectionStatus("failed");
+        setError("Failed to initialize application");
+        setLoading(false);
+      }
+    };
+
     checkConnectionAndFetchStats();
   }, []);
-
-  const checkConnectionAndFetchStats = async () => {
-    try {
-      // First check connection
-      const connectionResult = await testSupabaseConnection();
-      if (!connectionResult.success) {
-        setConnectionStatus("failed");
-        setError(connectionResult.error || "Failed to connect to database");
-        setLoading(false);
-        return;
-      }
-
-      setConnectionStatus("connected");
-      await fetchStats();
-    } catch (error) {
-      setConnectionStatus("failed");
-      setError("Failed to initialize application");
-      setLoading(false);
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      setError(null);
-      
-      // Get total count
-      const { count: total } = await supabase
-        .from("vulnerabilities")
-        .select("*", { count: "exact", head: true });
-
-      // Get severity counts
-      const { data: severityData } = await supabase
-        .from("vulnerabilities")
-        .select("severity");
-
-      const severityCounts = severityData?.reduce((acc, item) => {
-        const severity = item.severity?.toLowerCase();
-        if (severity === "high") acc.highSeverity++;
-        else if (severity === "medium") acc.mediumSeverity++;
-        else if (severity === "low") acc.lowSeverity++;
-        return acc;
-      }, { highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 }) || { highSeverity: 0, mediumSeverity: 0, lowSeverity: 0 };
-
-      setStats({
-        totalVulnerabilities: total || 0,
-        ...severityCounts,
-      });
-    } catch (error) {
-      console.error("Error fetching stats:", error);
-      setError("Failed to load vulnerability data");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const StatCard = ({ 
     title, 
