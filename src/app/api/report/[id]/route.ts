@@ -4,11 +4,12 @@ import { handleApiError } from "@/lib/errors/errorHandler";
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const service = new ReportService();
-    const result = await service.getReportById(params.id);
+    const result = await service.getReportById(id);
 
     return NextResponse.json(result);
   } catch (error) {
@@ -18,11 +19,12 @@ export async function GET(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const service = new ReportService();
-    await service.deleteReport(params.id);
+    await service.deleteReport(id);
 
     return NextResponse.json({ message: "Report deleted successfully" });
   } catch (error) {
