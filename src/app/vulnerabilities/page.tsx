@@ -3,8 +3,11 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import SeverityBadge from "@/components/ui/SeverityBadge";
 import { supabase } from "@/lib/supabase";
 import { Vulnerability } from "@/types/vulnerability";
+import { type SeverityLevel } from "@/lib/severity";
 import Link from "next/link";
 import { PDFService } from "@/lib/services/pdf.service";
 
@@ -80,28 +83,15 @@ function VulnerabilitiesContent() {
     vuln.description?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getSeverityColor = (severity: string) => {
-    switch (severity?.toLowerCase()) {
-      case "high":
-        return "bg-red-100 text-red-800";
-      case "medium":
-        return "bg-yellow-100 text-yellow-800";
-      case "low":
-        return "bg-green-100 text-green-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Group vulnerabilities by IP for summary
+  // Group vulnerabilities by IP for summary  
   const ipSummary = filteredVulnerabilities.reduce((acc, vuln) => {
     if (!acc[vuln.ip_address]) {
-      acc[vuln.ip_address] = { total: 0, high: 0, medium: 0, low: 0, info: 0 };
+      acc[vuln.ip_address] = { total: 0, critical: 0, high: 0, medium: 0, low: 0, info: 0 };
     }
     acc[vuln.ip_address].total++;
     acc[vuln.ip_address][vuln.severity as keyof typeof acc[string]]++;
     return acc;
-  }, {} as Record<string, { total: number; high: number; medium: number; low: number; info: number }>);
+  }, {} as Record<string, { total: number; critical: number; high: number; medium: number; low: number; info: number }>);
 
   // Group vulnerabilities by CVE
   const cveSummary = filteredVulnerabilities.reduce((acc, vuln) => {
@@ -133,6 +123,7 @@ function VulnerabilitiesContent() {
         description: reportFilter ? `Vulnerabilities from ${reportName}` : "Complete vulnerability analysis",
         file_name: "vulnerabilities_export.csv",
         total_vulnerabilities: vulnerabilities.length,
+        critical_count: vulnerabilities.filter(v => v.severity === 'critical').length,
         high_count: vulnerabilities.filter(v => v.severity === 'high').length,
         medium_count: vulnerabilities.filter(v => v.severity === 'medium').length,
         low_count: vulnerabilities.filter(v => v.severity === 'low').length,
@@ -160,7 +151,7 @@ function VulnerabilitiesContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-full">
       
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         <div className="py-6">
@@ -189,41 +180,31 @@ function VulnerabilitiesContent() {
                 </p>
               </div>
               <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
-                <button
+                <Button
                   onClick={handleExportPDF}
                   disabled={exportingPDF || vulnerabilities.length === 0}
-                  className="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                  loading={exportingPDF}
+                  variant="primary"
+                  size="md"
                 >
-                  {exportingPDF ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Export PDF
-                    </>
+                  {!exportingPDF && (
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
                   )}
-                </button>
+                  {exportingPDF ? 'Generating...' : 'Export PDF'}
+                </Button>
                 {!reportFilter && (
-                  <Link
-                    href="/reports"
-                    className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 text-center"
-                  >
-                    View Reports
+                  <Link href="/reports">
+                    <Button variant="secondary" size="md">
+                      View Reports
+                    </Button>
                   </Link>
                 )}
-                <Link
-                  href="/upload"
-                  className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 text-center"
-                >
-                  Upload New Scan
+                <Link href="/upload">
+                  <Button variant="info" size="md">
+                    Upload New Scan
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -232,18 +213,18 @@ function VulnerabilitiesContent() {
           {/* Tabs */}
           <div className="mb-6">
             <nav className="flex flex-wrap space-x-4 sm:space-x-8" aria-label="Tabs">
-              <button className="border-b-2 border-blue-500 py-2 px-1 text-sm font-medium !text-blue-600 whitespace-nowrap">
+              <button className="border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-700 whitespace-nowrap">
                 All Vulnerabilities
               </button>
               <button 
                 onClick={() => document.getElementById('ip-summary')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
+                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors whitespace-nowrap"
               >
                 IP Summary ({Object.keys(ipSummary).length})
               </button>
               <button 
                 onClick={() => document.getElementById('cve-summary')?.scrollIntoView({ behavior: 'smooth' })}
-                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700 whitespace-nowrap"
+                className="border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:border-gray-300 transition-colors whitespace-nowrap"
               >
                 CVE Analysis ({Object.keys(cveSummary).length})
               </button>
@@ -279,24 +260,27 @@ function VulnerabilitiesContent() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900"
                   >
                     <option value="all">All Severities</option>
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                    <option value="info">Info</option>
+                    <option value="critical">Critical (P1)</option>
+                    <option value="high">High (P2)</option>
+                    <option value="medium">Medium (P3)</option>
+                    <option value="low">Low (P4)</option>
+                    <option value="info">Info (P5)</option>
                   </select>
                 </div>
 
                 <div className="flex items-end">
-                  <button
+                  <Button
                     onClick={() => {
                       setSearchTerm("");
                       setSeverityFilter("all");
                       setCurrentPage(1);
                     }}
-                    className="w-full bg-gray-600 !text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-800"
+                    variant="secondary"
+                    size="md"
+                    fullWidth
                   >
                     Clear Filters
-                  </button>
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -328,9 +312,10 @@ function VulnerabilitiesContent() {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                           <div className="flex-1">
                             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(vuln.severity)} w-fit`}>
-                                {vuln.severity}
-                              </span>
+                              <SeverityBadge 
+                                severity={vuln.severity.toLowerCase() as SeverityLevel} 
+                                size="sm"
+                              />
                               <h4 className="text-sm font-medium text-gray-900 break-words">{vuln.cve}</h4>
                             </div>
                             
@@ -426,9 +411,10 @@ function VulnerabilitiesContent() {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between space-y-2 sm:space-y-0">
                           <div className="flex-1">
                             <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 mb-2">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getSeverityColor(data.severity)} w-fit`}>
-                                {data.severity}
-                              </span>
+                              <SeverityBadge 
+                                severity={data.severity.toLowerCase() as SeverityLevel} 
+                                size="sm"
+                              />
                               <h4 className="font-medium text-gray-900 break-words">{cve}</h4>
                             </div>
                             {data.plugin_name && (
@@ -450,21 +436,23 @@ function VulnerabilitiesContent() {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <div className="flex-1 flex justify-between sm:hidden">
-                <button
+              <div className="flex-1 flex justify-between sm:hidden space-x-3">
+                <Button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  variant="secondary"
+                  size="md"
                 >
                   Previous
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  variant="secondary"
+                  size="md"
                 >
                   Next
-                </button>
+                </Button>
               </div>
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
@@ -474,21 +462,23 @@ function VulnerabilitiesContent() {
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                    <button
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm space-x-2" aria-label="Pagination">
+                    <Button
                       onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                       disabled={currentPage === 1}
-                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      variant="secondary"
+                      size="md"
                     >
                       Previous
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
                       disabled={currentPage === totalPages}
-                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                      variant="secondary"
+                      size="md"
                     >
                       Next
-                    </button>
+                    </Button>
                   </nav>
                 </div>
               </div>
@@ -503,7 +493,7 @@ function VulnerabilitiesContent() {
 export default function VulnerabilitiesPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-full">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="text-center py-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>

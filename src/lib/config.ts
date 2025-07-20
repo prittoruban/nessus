@@ -5,8 +5,8 @@ export const config = {
     anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
   },
   app: {
-    name: "Nessus Vulnerability Scanner",
-    description: "Upload and analyze Nessus vulnerability scan results",
+    name: "HTC Global VA Report Assistance Portal",
+    description: "Comprehensive vulnerability assessment reporting platform with multi-organizational support",
     version: "1.0.0",
   },
   upload: {

@@ -1,359 +1,393 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/Card";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import Link from "next/link";
 
 interface DashboardStats {
   totalReports: number;
+  totalOrganizations: number;
   totalVulnerabilities: number;
-  highSeverity: number;
-  uniqueIPs: number;
-  recentReports: Array<{
-    id: string;
-    name: string;
-    status: string;
-    created_at: string;
-    total_vulnerabilities: number;
-  }>;
+  criticalVulnerabilities: number;
+  highVulnerabilities: number;
+  processedThisMonth: number;
+  averageScore: number;
+}
+
+interface RecentReport {
+  id: string;
+  orgName: string;
+  reportName: string;
+  iteration: number;
+  createdAt: string;
+  status: "completed" | "processing" | "failed";
+  vulnerabilityCount: number;
+  criticalCount: number;
+}
+
+interface TrendData {
+  month: string;
+  vulnerabilities: number;
+  reports: number;
 }
 
 export default function Home() {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalReports: 0,
-    totalVulnerabilities: 0,
-    highSeverity: 0,
-    uniqueIPs: 0,
-    recentReports: []
-  });
-  const [loading, setLoading] = useState(true);
+  // Mock data - will be replaced with actual API calls
+  const mockStats: DashboardStats = {
+    totalReports: 24,
+    totalOrganizations: 8,
+    totalVulnerabilities: 1847,
+    criticalVulnerabilities: 156,
+    highVulnerabilities: 423,
+    processedThisMonth: 6,
+    averageScore: 7.2
+  };
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
+  const mockRecentReports: RecentReport[] = [
+    {
+      id: "rpt-001",
+      orgName: "ABC Corporation",
+      reportName: "Q4 Network Security Assessment",
+      iteration: 3,
+      createdAt: "2025-01-15",
+      status: "completed",
+      vulnerabilityCount: 112,
+      criticalCount: 8
+    },
+    {
+      id: "rpt-002",
+      orgName: "XYZ Company",
+      reportName: "Initial Security Baseline",
+      iteration: 1,
+      createdAt: "2025-01-14",
+      status: "completed",
+      vulnerabilityCount: 89,
+      criticalCount: 5
+    },
+    {
+      id: "rpt-003",
+      orgName: "TechCorp Ltd",
+      reportName: "Infrastructure Assessment",
+      iteration: 1,
+      createdAt: "2025-01-13",
+      status: "processing",
+      vulnerabilityCount: 0,
+      criticalCount: 0
+    }
+  ];
 
-        // Fetch reports with vulnerability counts
-        const { data: reportsData, error: reportsError } = await supabase
-          .from("reports")
-          .select(`
-            id,
-            name,
-            status,
-            created_at,
-            total_vulnerabilities
-          `)
-          .order("created_at", { ascending: false })
-          .limit(5);
+  const mockTrendData: TrendData[] = [
+    { month: "Oct", vulnerabilities: 1245, reports: 18 },
+    { month: "Nov", vulnerabilities: 1567, reports: 20 },
+    { month: "Dec", vulnerabilities: 1734, reports: 22 },
+    { month: "Jan", vulnerabilities: 1847, reports: 24 }
+  ];
 
-        if (reportsError) {
-          console.error("Error fetching reports:", reportsError);
-        }
+  const [selectedPeriod, setSelectedPeriod] = useState("monthly");
 
-        // Fetch total counts
-        const { count: totalReports } = await supabase
-          .from("reports")
-          .select("*", { count: "exact", head: true });
-
-        const { count: totalVulnerabilities } = await supabase
-          .from("vulnerabilities")
-          .select("*", { count: "exact", head: true });
-
-        const { count: highSeverity } = await supabase
-          .from("vulnerabilities")
-          .select("*", { count: "exact", head: true })
-          .eq("severity", "high");
-
-        // Fetch unique IPs count
-        const { data: uniqueIPsData } = await supabase
-          .from("vulnerabilities")
-          .select("ip_address");
-
-        const uniqueIPs = uniqueIPsData 
-          ? new Set(uniqueIPsData.map(v => v.ip_address)).size 
-          : 0;
-
-        setStats({
-          totalReports: totalReports || 0,
-          totalVulnerabilities: totalVulnerabilities || 0,
-          highSeverity: highSeverity || 0,
-          uniqueIPs,
-          recentReports: reportsData || []
-        });
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800";
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-800">Completed</span>;
       case "processing":
-        return "bg-yellow-100 text-yellow-800";
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">Processing</span>;
       case "failed":
-        return "bg-red-100 text-red-800";
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">Failed</span>;
       default:
-        return "bg-gray-100 text-gray-800";
+        return <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">Unknown</span>;
     }
   };
 
+  const getRiskLevel = (criticalCount: number) => {
+    if (criticalCount >= 10) return { level: "High", color: "text-red-600 bg-red-100" };
+    if (criticalCount >= 5) return { level: "Medium", color: "text-orange-600 bg-orange-100" };
+    if (criticalCount >= 1) return { level: "Low", color: "text-yellow-600 bg-yellow-100" };
+    return { level: "Minimal", color: "text-green-600 bg-green-100" };
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="py-6">
-          {/* Welcome Section */}
-          <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Nessus Vulnerability Dashboard</h1>
-            <p className="text-sm sm:text-base text-gray-600">
-              Comprehensive vulnerability management and analysis platform
-            </p>
+    <div className="min-h-full">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Vulnerability Assessment Dashboard</h1>
+          <p className="text-gray-600">Monitor security posture across all organizations</p>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-4">
+            <Link href="/upload">
+              <Button variant="primary">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Quick Upload
+              </Button>
+            </Link>
+            <Link href="/risk-insights">
+              <Button variant="secondary">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                Risk Insights
+              </Button>
+            </Link>
+            <Link href="/overview-of-results">
+              <Button variant="secondary">
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Overview
+              </Button>
+            </Link>
           </div>
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 md:w-5 md:h-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-3 md:ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-xs md:text-sm font-medium text-gray-500 truncate">Total Reports</dt>
-                      <dd className="text-lg md:text-xl font-medium text-gray-900">
-                        {loading ? "..." : stats.totalReports}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 md:w-5 md:h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.996-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-3 md:ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-xs md:text-sm font-medium text-gray-500 truncate">Total Vulnerabilities</dt>
-                      <dd className="text-lg md:text-xl font-medium text-gray-900">
-                        {loading ? "..." : stats.totalVulnerabilities}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 md:w-5 md:h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.618 5.984A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-3 md:ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-xs md:text-sm font-medium text-gray-500 truncate">High Severity</dt>
-                      <dd className="text-lg md:text-xl font-medium text-gray-900">
-                        {loading ? "..." : stats.highSeverity}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                      <svg className="w-4 h-4 md:w-5 md:h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
-                      </svg>
-                    </div>
-                  </div>
-                  <div className="ml-3 md:ml-5 w-0 flex-1">
-                    <dl>
-                      <dt className="text-xs md:text-sm font-medium text-gray-500 truncate">Unique IPs</dt>
-                      <dd className="text-lg md:text-xl font-medium text-gray-900">
-                        {loading ? "..." : stats.uniqueIPs}
-                      </dd>
-                    </dl>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Upload New Scan</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Upload and process Nessus CSV files with automatic vulnerability detection and classification.
-                    </p>
-                    <Link
-                      href="/upload"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700"
-                    >
-                      Upload Scan
-                    </Link>
-                  </div>
-                  <div className="flex-shrink-0 mt-4 sm:mt-0 sm:ml-4">
-                    <svg className="w-10 h-10 md:w-12 md:h-12 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Manage Reports</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      View, filter, and manage all vulnerability scan reports with detailed analysis and insights.
-                    </p>
-                    <Link
-                      href="/reports"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-gray-600 hover:bg-gray-700"
-                    >
-                      View Reports
-                    </Link>
-                  </div>
-                  <div className="flex-shrink-0 mt-4 sm:mt-0 sm:ml-4">
-                    <svg className="w-10 h-10 md:w-12 md:h-12 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-4 md:p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Analyze Vulnerabilities</h3>
-                    <p className="text-sm text-gray-600 mb-4">
-                      Browse all vulnerabilities with IP-based summaries and CVE-based analysis for comprehensive insights.
-                    </p>
-                    <Link
-                      href="/vulnerabilities"
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-red-600 hover:bg-red-700"
-                    >
-                      View Vulnerabilities
-                    </Link>
-                  </div>
-                  <div className="flex-shrink-0 mt-4 sm:mt-0 sm:ml-4">
-                    <svg className="w-10 h-10 md:w-12 md:h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.996-.833-2.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                    </svg>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Recent Reports */}
+        {/* Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Card>
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-center justify-between mb-4 md:mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Recent Reports</h3>
-                <Link
-                  href="/reports"
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-                >
-                  View all reports →
-                </Link>
-              </div>
-              
-              {loading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-gray-500">Loading recent reports...</p>
-                </div>
-              ) : stats.recentReports.length === 0 ? (
-                <div className="text-center py-8">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">No reports yet</h3>
-                  <p className="mt-1 text-sm text-gray-500">Get started by uploading your first Nessus scan.</p>
-                  <div className="mt-6">
-                    <Link
-                      href="/upload"
-                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
-                    >
-                      Upload Scan
-                    </Link>
-                  </div>
                 </div>
-              ) : (
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Reports</p>
+                  <p className="text-2xl font-bold text-gray-900">{mockStats.totalReports}</p>
+                  <p className="text-xs text-green-600">+{mockStats.processedThisMonth} this month</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Organizations</p>
+                  <p className="text-2xl font-bold text-gray-900">{mockStats.totalOrganizations}</p>
+                  <p className="text-xs text-gray-500">Active clients</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-red-100 rounded-lg">
+                  <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Critical Issues</p>
+                  <p className="text-2xl font-bold text-gray-900">{mockStats.criticalVulnerabilities}</p>
+                  <p className="text-xs text-red-600">Requires immediate attention</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card>
+            <div className="p-6">
+              <div className="flex items-center">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <svg className="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium text-gray-600">Total Vulnerabilities</p>
+                  <p className="text-2xl font-bold text-gray-900">{mockStats.totalVulnerabilities.toLocaleString()}</p>
+                  <p className="text-xs text-gray-500">{mockStats.highVulnerabilities} high severity</p>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Recent Reports */}
+          <div className="lg:col-span-2">
+            <Card>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-lg font-semibold text-gray-900">Recent Reports</h2>
+                  <Link href="/reports">
+                    <Button variant="secondary" size="sm">View All</Button>
+                  </Link>
+                </div>
+
                 <div className="space-y-4">
-                  {stats.recentReports.map((report) => (
-                    <div key={report.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 space-y-3 sm:space-y-0">
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-                          <Link
-                            href={`/reports/${report.id}`}
-                            className="text-sm font-medium text-gray-900 hover:text-blue-600 break-words"
-                          >
-                            {report.name}
-                          </Link>
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(report.status)} w-fit`}>
-                            {report.status}
-                          </span>
-                        </div>
-                        <div className="mt-1 flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm text-gray-500">
-                          <span>{report.total_vulnerabilities || 0} vulnerabilities</span>
-                          <span>{new Date(report.created_at).toLocaleDateString()}</span>
+                  {mockRecentReports.map(report => {
+                    const risk = getRiskLevel(report.criticalCount);
+                    return (
+                      <div key={report.id} className="border-l-4 border-blue-500 bg-blue-50 p-4 rounded-r-lg">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h3 className="font-semibold text-gray-900">{report.reportName}</h3>
+                              {getStatusBadge(report.status)}
+                            </div>
+                            <div className="flex items-center space-x-4 text-sm text-gray-600 mb-2">
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                </svg>
+                                {report.orgName}
+                              </span>
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                                Iteration #{report.iteration}
+                              </span>
+                              <span className="flex items-center">
+                                <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                {new Date(report.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            {report.status === "completed" && (
+                              <div className="flex items-center space-x-4">
+                                <span className="text-sm text-gray-600">
+                                  {report.vulnerabilityCount} vulnerabilities
+                                </span>
+                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${risk.color}`}>
+                                  {risk.level} Risk
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="ml-4">
+                            {report.status === "completed" && (
+                              <Link href={`/reports/${report.id}`}>
+                                <Button variant="primary" size="sm">View</Button>
+                              </Link>
+                            )}
+                          </div>
                         </div>
                       </div>
-                      <div className="flex-shrink-0">
-                        <Link
-                          href={`/reports/${report.id}`}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                        >
-                          View details →
-                        </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Trend Chart & Quick Stats */}
+          <div className="space-y-6">
+            {/* Security Trend */}
+            <Card>
+              <div className="p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-semibold text-gray-900">Security Trend</h2>
+                  <select
+                    value={selectedPeriod}
+                    onChange={(e) => setSelectedPeriod(e.target.value)}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value="monthly">Monthly</option>
+                    <option value="quarterly">Quarterly</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-3">
+                  {mockTrendData.map((data, index) => (
+                    <div key={index} className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">{data.month}</span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-24 bg-gray-200 rounded-full h-2">
+                          <div 
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${(data.vulnerabilities / 2000) * 100}%` }}
+                          ></div>
+                        </div>
+                        <span className="text-sm font-medium">{data.vulnerabilities}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </div>
+            </Card>
+
+            {/* Risk Summary */}
+            <Card>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Risk Summary</h2>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Critical</span>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800">
+                      {mockStats.criticalVulnerabilities}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">High</span>
+                    <span className="px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                      {mockStats.highVulnerabilities}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-gray-600">Average Security Score</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {mockStats.averageScore}/10
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t">
+                  <Link href="/risk-insights">
+                    <Button variant="secondary" size="sm" className="w-full">
+                      View Detailed Analysis
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+
+            {/* Quick Actions */}
+            <Card>
+              <div className="p-6">
+                <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
+                <div className="space-y-2">
+                  <Link href="/vulnerabilities" className="block">
+                    <button className="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.732 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <span className="text-sm text-gray-700">View All Vulnerabilities</span>
+                      </div>
+                    </button>
+                  </Link>
+                  <Link href="/reports" className="block">
+                    <button className="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors">
+                      <div className="flex items-center">
+                        <svg className="w-4 h-4 mr-3 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-sm text-gray-700">Generate Report</span>
+                      </div>
+                    </button>
+                  </Link>
+                </div>
+              </div>
+            </Card>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

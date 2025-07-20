@@ -19,6 +19,7 @@ export interface ReportData {
 export interface IPSummary {
   ip: string;
   total: number;
+  critical: number;
   high: number;
   medium: number;
   low: number;
@@ -689,6 +690,7 @@ export class PDFService {
         acc[vuln.ip_address] = { 
           ip: vuln.ip_address, 
           total: 0, 
+          critical: 0,
           high: 0, 
           medium: 0, 
           low: 0, 

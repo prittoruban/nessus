@@ -5,28 +5,39 @@ import { useState, useEffect } from "react";
 export function BackToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
-  // Show button when page is scrolled down
   useEffect(() => {
     const toggleVisibility = () => {
-      if (window.pageYOffset > 300) {
+      // Check scroll position of the main element
+      const mainElement = document.querySelector('main');
+      if (mainElement && mainElement.scrollTop > 300) {
         setIsVisible(true);
       } else {
         setIsVisible(false);
       }
     };
 
-    window.addEventListener("scroll", toggleVisibility);
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.addEventListener('scroll', toggleVisibility);
+      // Check initial state
+      toggleVisibility();
+    }
 
     return () => {
-      window.removeEventListener("scroll", toggleVisibility);
+      if (mainElement) {
+        mainElement.removeEventListener('scroll', toggleVisibility);
+      }
     };
   }, []);
 
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    const mainElement = document.querySelector('main');
+    if (mainElement) {
+      mainElement.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
   };
 
   if (!isVisible) {
@@ -36,15 +47,32 @@ export function BackToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 z-50 bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full shadow-lg transition-all duration-300 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+      className="fixed bottom-8 right-8 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-xl transition-all duration-300 hover:shadow-2xl focus:outline-none focus:ring-4 focus:ring-blue-300 border-2 border-white hover:scale-105"
       aria-label="Back to top"
+      title="Back to top"
+      style={{ 
+        zIndex: 10000,
+        position: 'fixed',
+        bottom: '32px',
+        right: '32px',
+        backgroundColor: '#2563eb',
+        color: 'white',
+        border: '2px solid white',
+        borderRadius: '50%',
+        width: '56px',
+        height: '56px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center'
+      }}
     >
       <svg
-        className="w-5 h-5"
+        className="w-6 h-6"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ color: 'white' }}
       >
         <path
           strokeLinecap="round"

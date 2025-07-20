@@ -48,9 +48,29 @@ label {
   color: #374151 !important;
 }
 
-/* Fix button text colors */
-button {
-  color: inherit;
+/* Override any button color inheritance issues */
+button[class*="bg-blue"] {
+  color: white !important;
+}
+
+button[class*="bg-red"] {
+  color: white !important;
+}
+
+button[class*="bg-green"] {
+  color: white !important;
+}
+
+button[class*="bg-yellow"] {
+  color: white !important;
+}
+
+button[class*="bg-cyan"] {
+  color: white !important;
+}
+
+button[class*="bg-white"] {
+  color: #111827 !important;
 }
 
 /* Ensure proper contrast for all text elements */

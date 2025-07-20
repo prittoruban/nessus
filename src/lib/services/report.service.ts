@@ -56,6 +56,9 @@ export class ReportService {
         file_name: file.name,
         file_size: file.size,
         status: "processing",
+        org_name: "Default Organization", // TODO: Get from user session or form
+        source_type: "internal", // TODO: Get from user selection
+        iteration: 1,
       };
 
       const validatedReportData = createReportSchema.parse(reportData);
@@ -254,6 +257,10 @@ export class ReportService {
       severity: this.normalizeSeverity(row["Severity"] || row["Risk"] || "medium"),
       plugin_name: row["Plugin Name"] || row["Name"] || "",
       description: row["Description"] || row["Synopsis"] || "",
+      report_id: "", // Will be set after report creation
+      vuln_name: row["Plugin Name"] || row["Name"] || "Unknown Vulnerability",
+      is_zero_day: false, // Default value, could be enhanced later
+      iteration: 1,
     };
   }
 

@@ -2,37 +2,51 @@
 
 This directory contains the SQL scripts needed to set up your Nessus vulnerability scanner database.
 
-## Setup Order
+## Files
 
-Run these scripts in your Supabase SQL editor in the following order:
+- `01_initial_setup.sql` - Initial database schema and sample data (Legacy)
+- `02_reports_migration.sql` - Migration to add reports functionality (Legacy)
+- `03_enhanced_schema_migration.sql` - ⭐ **NEW** Enhanced schema for enterprise features
+- `04_data_migration.sql` - ⭐ **NEW** Migrate existing data to new structure  
+- `05_validation_check.sql` - ⭐ **NEW** Validate migration success
 
-### 1. Initial Setup (`01_initial_setup.sql`)
-- Creates the main `vulnerabilities` table
-- Sets up indexes for performance
-- Enables Row Level Security (RLS)
-- Creates basic policies
-- Adds sample data for testing
+## Setup Instructions
 
-### 2. Reports Migration (`02_reports_migration.sql`)
-- Creates the `reports` table for managing scan reports
-- Adds `report_id` foreign key to vulnerabilities table
-- Creates indexes and relationships
-- Sets up triggers for automatic statistics updates
-- Migrates existing data to the new structure
+### For New Installations:
+1. Create a new Supabase project
+2. Copy the connection details to your `.env.local` file
+3. Run **only** `03_enhanced_schema_migration.sql` in the Supabase SQL editor
 
-## Quick Setup
+### For Existing Installations (Migration):
+1. **BACKUP YOUR DATA FIRST** 
+2. Run the following scripts **in exact order** in Supabase SQL Editor:
+   - `03_enhanced_schema_migration.sql` - Add new tables and columns
+   - `04_data_migration.sql` - Migrate existing data  
+   - `05_validation_check.sql` - Verify everything worked
 
-1. Open your Supabase project dashboard
-2. Go to the SQL Editor
-3. Copy and paste the contents of `01_initial_setup.sql`
-4. Click "Run" to execute
-5. Copy and paste the contents of `02_reports_migration.sql`
-6. Click "Run" to execute
+## Enhanced Schema Features
 
-Your database is now ready for the Nessus vulnerability scanner application!
+The new schema supports:
+- ✅ **Multi-organization management** with iterations
+- ✅ **Source type classification** (Internal/External)
+- ✅ **Host-level aggregations** for detailed reporting
+- ✅ **Enhanced vulnerability data** with solutions and zero-day flags
+- ✅ **HTC Global report format** compatibility
+- ✅ **Trend analysis** across scan iterations
+- ✅ **Performance optimized** with proper indexing
 
 ## Schema Overview
 
-- **vulnerabilities**: Stores individual vulnerability findings
-- **reports**: Stores scan report metadata and statistics
-- **Relationships**: Each vulnerability belongs to a report via `report_id`
+```
+organizations (1) → reports (*) → report_hosts (*)
+                            └→ vulnerabilities (*)
+                            └→ scan_configurations (1)
+cve_database (reference data)
+```
+
+## Validation
+
+After running migrations, check the validation results:
+- All checks should show "PASS" status
+- Review data summary counts
+- Verify sample data looks correct

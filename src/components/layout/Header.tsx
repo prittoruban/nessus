@@ -30,24 +30,48 @@ export default function Header() {
               </div>
               <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
                 <span className="hidden sm:inline">{config.app.name}</span>
-                <span className="sm:hidden">Nessus</span>
+                <span className="sm:hidden">HTC Portal</span>
               </h1>
             </Link>
           </div>
           
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex space-x-8">
+          <nav className="hidden md:flex space-x-6">
+            <Link
+              href="/"
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Dashboard
+            </Link>
             <Link
               href="/upload"
               className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
-              Upload Scan
+              Quick Scan Upload
+            </Link>
+            <Link
+              href="/risk-insights"
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Risk Insights
+            </Link>
+            <Link
+              href="/overview-of-results"
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Overview of Results
             </Link>
             <Link
               href="/reports"
               className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
             >
-              View Reports
+              Reports
+            </Link>
+            <Link
+              href="/vulnerabilities"
+              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+            >
+              Vulnerabilities
             </Link>
           </nav>
 
@@ -78,18 +102,46 @@ export default function Header() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
               <div className="space-y-1">
                 <Link
+                  href="/"
+                  className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
                   href="/upload"
                   className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  Upload Scan
+                  Quick Scan Upload
+                </Link>
+                <Link
+                  href="/risk-insights"
+                  className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Risk Insights
+                </Link>
+                <Link
+                  href="/overview-of-results"
+                  className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Overview of Results
                 </Link>
                 <Link
                   href="/reports"
                   className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
                   onClick={() => setMobileMenuOpen(false)}
                 >
-                  View Reports
+                  Reports
+                </Link>
+                <Link
+                  href="/vulnerabilities"
+                  className="block text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-base font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Vulnerabilities
                 </Link>
               </div>
             </div>

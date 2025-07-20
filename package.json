@@ -1,7 +1,7 @@
 {
-  "name": "nessus-vulnerability-scanner",
+  "name": "report-assistance-portal",
   "version": "1.0.0",
-  "description": "A modern web application for uploading and analyzing Nessus vulnerability scan results",
+  "description": "HTC Global VA Report Assistance Portal - A comprehensive vulnerability assessment reporting platform with multi-organizational support",
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",

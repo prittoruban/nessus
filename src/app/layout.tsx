@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import  Header  from "@/components/layout/Header";
+import Sidebar from "@/components/layout/Sidebar";
 import { BackToTop } from "@/components/ui/BackToTop";
 
 const geistSans = Geist({
@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nessus Scan Manager",
+  title: "HTC Global VA Report Assistance Portal",
   description:
-    "Manage and analyze Nessus vulnerability scans. Upload, view, and manage your vulnerability reports with ease. Automated processing and analysis of Nessus CSV files.",
+    "Comprehensive vulnerability assessment reporting platform with multi-organizational support. Professional HTC Global VA format compliance for internal and external security assessments.",
 };
 
 export const viewport: Viewport = {
@@ -35,9 +35,14 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Header />
-        <main>{children}</main>
-        <BackToTop />
+        <div className="flex h-screen overflow-hidden bg-gray-50">
+          <Sidebar />
+          <main className="flex-1 overflow-y-auto bg-gray-50 relative">
+            <div className="lg:hidden h-16"></div> {/* Spacer for mobile header */}
+            {children}
+            <BackToTop />
+          </main>
+        </div>
       </body>
     </html>
   );
