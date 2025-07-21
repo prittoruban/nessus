@@ -24,9 +24,43 @@ export class ReportService {
   private vulnerabilityRepository = new VulnerabilityRepository();
 
   /**
+   * Truncate string to fit database constraints
+   */
+  private truncateString(value: string | undefined | null, maxLength: number): string | undefined {
+    if (!value) return undefined;
+    const str = String(value);
+    return str.length > maxLength ? str.substring(0, maxLength - 3) + '...' : str;
+  }
+
+  /**
    * Process CSV file upload and create report
    */
-  async processUpload(file: File, reportName?: string, reportDescription?: string): Promise<{
+  async processUpload(
+    file: File, 
+    reportData?: {
+      orgName?: string;
+      sourceType?: string;
+      reportName?: string;
+      reportDescription?: string;
+      documentType?: string;
+      version?: string;
+      assessee?: string;
+      assessor?: string;
+      reviewer?: string;
+      approver?: string;
+      conductedBy?: string;
+      scanStartDate?: string;
+      scanEndDate?: string;
+      testLocation?: string;
+      toolUsed?: string;
+      scanDescription?: string;
+      methodology?: string;
+      projectScopeNotes?: string;
+      conclusion?: string;
+      confidentialityLevel?: string;
+      legalDisclaimer?: string;
+    }
+  ): Promise<{
     success: boolean;
     reportId: string;
     inserted: number;
@@ -49,19 +83,43 @@ export class ReportService {
         throw new FileUploadError("File must be a CSV");
       }
 
+      // Get organization name and source type
+      const orgName = this.truncateString(reportData?.orgName || "Default Organization", 255)!;
+      const sourceType = (reportData?.sourceType as "internal" | "external") || "internal";
+      
+      // Get the next iteration number for this organization and source type
+      const nextIteration = await this.reportRepository.getNextIteration(orgName, sourceType);
+
       // Create report record first
-      const reportData: CreateReport = {
-        name: reportName || `Nessus Scan - ${new Date().toLocaleDateString()}`,
-        description: reportDescription || `Automated upload from ${file.name}`,
+      const createReportData: CreateReport = {
+        name: reportData?.reportName || `Nessus Scan - ${new Date().toLocaleDateString()}`,
+        description: reportData?.reportDescription || `Automated upload from ${file.name}`,
         file_name: file.name,
         file_size: file.size,
         status: "processing",
-        org_name: "Default Organization", // TODO: Get from user session or form
-        source_type: "internal", // TODO: Get from user selection
-        iteration: 1,
+        org_name: orgName,
+        source_type: sourceType,
+        iteration: nextIteration,
+        document_type: reportData?.documentType || "Vulnerability Assessment Report",
+        version: reportData?.version || "1.0",
+        assessee: this.truncateString(reportData?.assessee, 255),
+        assessor: this.truncateString(reportData?.assessor, 255),
+        reviewer: this.truncateString(reportData?.reviewer, 255),
+        approver: this.truncateString(reportData?.approver, 255),
+        conducted_by: reportData?.conductedBy || undefined,
+        scan_start_date: reportData?.scanStartDate || undefined,
+        scan_end_date: reportData?.scanEndDate || undefined,
+        test_location: reportData?.testLocation || "On-site",
+        tool_used: reportData?.toolUsed || "Nessus",
+        scan_description: reportData?.scanDescription || "Network Vulnerability Assessment",
+        methodology: reportData?.methodology || undefined,
+        project_scope_notes: reportData?.projectScopeNotes || undefined,
+        conclusion: reportData?.conclusion || undefined,
+        confidentiality_level: reportData?.confidentialityLevel || "Internal",
+        legal_disclaimer: reportData?.legalDisclaimer || "This document contains confidential and proprietary information.",
       };
 
-      const validatedReportData = createReportSchema.parse(reportData);
+      const validatedReportData = createReportSchema.parse(createReportData);
       const report = await this.reportRepository.create(validatedReportData);
       reportId = report.id!;
 
@@ -89,8 +147,14 @@ export class ReportService {
           // Transform CSV row to vulnerability format
           const vulnerability = this.transformCsvRow(row);
           
+          // Add report_id to the vulnerability
+          const vulnerabilityWithReportId: CreateVulnerability = {
+            ...vulnerability,
+            report_id: reportId,
+          };
+          
           // Validate the transformed data
-          const validatedVuln = createVulnerabilitySchema.parse(vulnerability);
+          const validatedVuln = createVulnerabilitySchema.parse(vulnerabilityWithReportId);
           vulnerabilities.push(validatedVuln);
         } catch (error) {
           skipped++;
@@ -98,16 +162,10 @@ export class ReportService {
         }
       }
 
-      // Insert valid vulnerabilities with report ID
+      // Insert valid vulnerabilities
       let inserted = 0;
       if (vulnerabilities.length > 0 && reportId) {
-        // Add report_id to each vulnerability (reportId is guaranteed to be string here)
-        const vulnerabilitiesWithReportId = vulnerabilities.map(vuln => ({
-          ...vuln,
-          report_id: reportId as string, // Type assertion since we checked reportId is not null
-        }));
-
-        const result = await this.vulnerabilityRepository.createMany(vulnerabilitiesWithReportId);
+        const result = await this.vulnerabilityRepository.createMany(vulnerabilities);
         inserted = result.length;
       }
 
@@ -243,34 +301,62 @@ export class ReportService {
   /**
    * Transform CSV row to vulnerability format
    */
-  private transformCsvRow(row: CsvRow): CreateVulnerability {
-    // Handle CVE field - use CVE if available, fallback to Plugin ID, or "N/A"
-    const cveValue = row["CVE"]?.trim() || row["Plugin ID"]?.trim() || "";
-    const cve = cveValue && cveValue !== "" ? cveValue : "N/A";
+  private transformCsvRow(row: CsvRow): Omit<CreateVulnerability, 'report_id'> {
+    // Handle CVE field
+    const cveValue = row["CVE"]?.trim() || "";
+    const cve = cveValue && cveValue !== "" ? cveValue : null;
     
-    // Handle IP address field - try multiple column names and clean the value
-    const ipAddress = (row["IP Address"] || row["IP"] || row["Host"] || "").toString().trim();
+    // Handle CVSS Score
+    const cvssValue = row["CVSS"]?.trim() || "";
+    const cvss_score = cvssValue ? parseFloat(cvssValue) : null;
+    
+    // Handle Plugin ID
+    const plugin_id = row["Plugin ID"]?.toString().trim() || "";
+    
+    // Handle IP address/Host
+    const host = (row["Host"] || row["IP"] || "").toString().trim();
+    
+    // Handle Port
+    const portValue = row["Port"]?.toString().trim() || "";
+    const port = portValue && !isNaN(Number(portValue)) ? Number(portValue) : null;
     
     return {
-      ip_address: ipAddress || "Unknown",
-      cve: cve,
-      severity: this.normalizeSeverity(row["Severity"] || row["Risk"] || "medium"),
-      plugin_name: row["Plugin Name"] || row["Name"] || "",
-      description: row["Description"] || row["Synopsis"] || "",
-      report_id: "", // Will be set after report creation
-      vuln_name: row["Plugin Name"] || row["Name"] || "Unknown Vulnerability",
-      is_zero_day: false, // Default value, could be enhanced later
-      iteration: 1,
+      plugin_id: this.truncateString(plugin_id || "unknown", 50)!,
+      cve: this.truncateString(cve, 50),
+      cvss_score: cvss_score,
+      ip_address: host || "Unknown",
+      protocol: this.normalizeProtocol(row["Protocol"]?.toString()),
+      port: port,
+      vuln_name: row["Name"]?.toString() || "Unknown Vulnerability",
+      synopsis: row["Synopsis"]?.toString() || null,
+      description: row["Description"]?.toString() || null,
+      solution: row["Solution"]?.toString() || null,
+      severity: this.normalizeSeverity(row["Risk"] || "medium"),
     };
+  }
+
+  /**
+   * Normalize protocol values to match database constraints
+   */
+  private normalizeProtocol(protocol: string | undefined | null): string | null {
+    if (!protocol) return null;
+    const normalized = protocol.toString().toUpperCase().trim();
+    
+    if (["TCP"].includes(normalized)) return "TCP";
+    if (["UDP"].includes(normalized)) return "UDP";
+    
+    // Default to null for unknown protocols instead of causing constraint violation
+    return null;
   }
 
   /**
    * Normalize severity values from different formats
    */
-  private normalizeSeverity(severity: string): "high" | "medium" | "low" | "info" {
+  private normalizeSeverity(severity: string): "critical" | "high" | "medium" | "low" | "info" {
     const normalized = severity.toLowerCase().trim();
     
-    if (["critical", "high"].includes(normalized)) return "high";
+    if (["critical"].includes(normalized)) return "critical";
+    if (["high"].includes(normalized)) return "high";
     if (["medium", "moderate"].includes(normalized)) return "medium";
     if (["low", "minor"].includes(normalized)) return "low";
     if (["info", "informational", "none"].includes(normalized)) return "info";

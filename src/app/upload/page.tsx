@@ -11,6 +11,8 @@ interface UploadFormData {
   sourceType: "internal" | "external";
   reportName: string;
   reportDescription: string;
+  documentType: string;
+  version: string;
   
   // Personnel
   assessee: string;
@@ -30,6 +32,8 @@ interface UploadFormData {
   methodology: string;
   projectScopeNotes: string;
   conclusion: string;
+  confidentialityLevel: string;
+  legalDisclaimer: string;
   
   // File
   file: File | null;
@@ -41,6 +45,8 @@ export default function QuickScanUploadPage() {
     sourceType: "internal",
     reportName: "",
     reportDescription: "",
+    documentType: "Vulnerability Assessment Report",
+    version: "1.0",
     assessee: "",
     assessor: "",
     reviewer: "",
@@ -54,6 +60,8 @@ export default function QuickScanUploadPage() {
     methodology: "",
     projectScopeNotes: "In this testing except Brute force attack, HTC did not attempt any active network-based Denial of Service (DoS), Password cracking, physical, process, and social engineering attacks.",
     conclusion: "",
+    confidentialityLevel: "Internal",
+    legalDisclaimer: "This document contains confidential and proprietary information.",
     file: null,
   });
 
@@ -115,34 +123,97 @@ export default function QuickScanUploadPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.file) {
-      setMessage("Please select a file");
-      return;
+    // Enhanced validation
+    const requiredFields = {
+      file: "Please select a file",
+      orgName: "Please enter organization name",
+      reportName: "Please enter report name",
+      scanStartDate: "Please select scan start date",
+      scanEndDate: "Please select scan end date"
+    };
+
+    for (const [field, errorMessage] of Object.entries(requiredFields)) {
+      if (!formData[field as keyof UploadFormData]) {
+        setMessage(errorMessage);
+        return;
+      }
     }
 
-    if (!formData.orgName) {
-      setMessage("Please enter organization name");
-      return;
+    // Validate date range
+    if (formData.scanStartDate && formData.scanEndDate) {
+      const startDate = new Date(formData.scanStartDate);
+      const endDate = new Date(formData.scanEndDate);
+      if (startDate > endDate) {
+        setMessage("Scan end date must be after start date");
+        return;
+      }
+    }
+
+    // Auto-populate report name if not provided
+    if (!formData.reportName && formData.file) {
+      const timestamp = new Date().toLocaleDateString();
+      const fileName = formData.file.name.replace('.csv', '');
+      handleInputChange("reportName", `${fileName} - ${timestamp}`);
     }
 
     setLoading(true);
     setMessage("");
 
     try {
-      // This will be replaced with actual API call
-      const iteration = getNextIteration();
-      console.log("Upload data:", { ...formData, iteration });
-      
-      // Simulate upload
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setMessage(`Successfully uploaded scan for ${formData.orgName} (Iteration #${iteration})`);
-      
-      // Reset form
-      setFormData(prev => ({ ...prev, file: null, reportName: "", reportDescription: "" }));
-      
-    } catch {
-      setMessage("Upload failed. Please try again.");
+      // Create FormData with all fields
+      const uploadFormData = new FormData();
+      if (formData.file) {
+        uploadFormData.append("file", formData.file);
+      }
+      uploadFormData.append("orgName", formData.orgName);
+      uploadFormData.append("sourceType", formData.sourceType);
+      uploadFormData.append("reportName", formData.reportName);
+      uploadFormData.append("reportDescription", formData.reportDescription);
+      uploadFormData.append("documentType", formData.documentType);
+      uploadFormData.append("version", formData.version);
+      uploadFormData.append("assessee", formData.assessee);
+      uploadFormData.append("assessor", formData.assessor);
+      uploadFormData.append("reviewer", formData.reviewer);
+      uploadFormData.append("approver", formData.approver);
+      uploadFormData.append("conductedBy", formData.conductedBy);
+      uploadFormData.append("scanStartDate", formData.scanStartDate);
+      uploadFormData.append("scanEndDate", formData.scanEndDate);
+      uploadFormData.append("testLocation", formData.testLocation);
+      uploadFormData.append("toolUsed", formData.toolUsed);
+      uploadFormData.append("scanDescription", formData.scanDescription);
+      uploadFormData.append("methodology", formData.methodology);
+      uploadFormData.append("projectScopeNotes", formData.projectScopeNotes);
+      uploadFormData.append("conclusion", formData.conclusion);
+      uploadFormData.append("confidentialityLevel", formData.confidentialityLevel);
+      uploadFormData.append("legalDisclaimer", formData.legalDisclaimer);
+
+      // Make API call
+      const response = await fetch("/api/scan/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        const iteration = getNextIteration();
+        setMessage(`Successfully uploaded scan for ${formData.orgName} (Iteration #${iteration})`);
+        
+        // Reset form
+        setFormData(prev => ({ 
+          ...prev, 
+          file: null, 
+          reportName: "", 
+          reportDescription: "",
+          scanStartDate: "",
+          scanEndDate: ""
+        }));
+      } else {
+        throw new Error(result.error || "Upload failed");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      setMessage(error instanceof Error ? error.message : "Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -154,7 +225,24 @@ export default function QuickScanUploadPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Quick Scan Upload</h1>
-          <p className="text-gray-600">Upload vulnerability scan results for an organization</p>
+          <p className="text-gray-600 mb-4">Upload vulnerability scan results for an organization</p>
+          
+          {/* Essential Information Notice */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-800 mb-2">Essential Information for Report Generation</h3>
+            <p className="text-sm text-blue-700 mb-2">
+              The following fields marked with (*) are required for generating comprehensive executive reports:
+            </p>
+            <ul className="text-sm text-blue-700 list-disc list-inside space-y-1">
+              <li><strong>Organization Name</strong> - Used in report headers and identification</li>
+              <li><strong>CSV File</strong> - Contains vulnerability data for analysis</li>
+              <li><strong>Report Name</strong> - Identifies this specific assessment</li>
+              <li><strong>Scan Dates</strong> - Defines the assessment period for the report</li>
+            </ul>
+            <p className="text-sm text-blue-700 mt-2">
+              <strong>Tip:</strong> Use &ldquo;Advanced Settings&rdquo; to customize personnel, methodology, and legal disclaimers for more professional reports.
+            </p>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -192,6 +280,28 @@ export default function QuickScanUploadPage() {
                     <option value="internal">Internal</option>
                     <option value="external">External</option>
                   </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Document Type
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.documentType}
+                    onChange={(e) => handleInputChange("documentType", e.target.value)}
+                    placeholder="e.g., Vulnerability Assessment Report"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Version
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.version}
+                    onChange={(e) => handleInputChange("version", e.target.value)}
+                    placeholder="e.g., 1.0"
+                  />
                 </div>
               </div>
             </div>
@@ -254,13 +364,14 @@ export default function QuickScanUploadPage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Report Name
+                    Report Name *
                   </label>
                   <Input
                     type="text"
                     value={formData.reportName}
                     onChange={(e) => handleInputChange("reportName", e.target.value)}
-                    placeholder="Auto-generated from file name"
+                    placeholder="Auto-generated from file name if left empty"
+                    required
                   />
                 </div>
                 <div>
@@ -286,22 +397,24 @@ export default function QuickScanUploadPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Scan Start Date
+                    Scan Start Date *
                   </label>
                   <Input
                     type="date"
                     value={formData.scanStartDate}
                     onChange={(e) => handleInputChange("scanStartDate", e.target.value)}
+                    required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Scan End Date
+                    Scan End Date *
                   </label>
                   <Input
                     type="date"
                     value={formData.scanEndDate}
                     onChange={(e) => handleInputChange("scanEndDate", e.target.value)}
+                    required
                   />
                 </div>
                 <div>
@@ -425,6 +538,36 @@ export default function QuickScanUploadPage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* Security & Legal */}
+                  <div>
+                    <h3 className="text-md font-semibold text-gray-900 mb-4">Security & Legal</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Confidentiality Level</label>
+                        <select
+                          value={formData.confidentialityLevel}
+                          onChange={(e) => handleInputChange("confidentialityLevel", e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                          <option value="Internal">Internal</option>
+                          <option value="Confidential">Confidential</option>
+                          <option value="Restricted">Restricted</option>
+                          <option value="Public">Public</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Legal Disclaimer</label>
+                        <textarea
+                          value={formData.legalDisclaimer}
+                          onChange={(e) => handleInputChange("legalDisclaimer", e.target.value)}
+                          rows={3}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="Legal disclaimer for the report"
+                        />
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
@@ -442,7 +585,7 @@ export default function QuickScanUploadPage() {
             <Button
               type="submit"
               variant="primary"
-              disabled={loading || !formData.file || !formData.orgName}
+              disabled={loading || !formData.file || !formData.orgName || !formData.reportName || !formData.scanStartDate || !formData.scanEndDate}
             >
               {loading ? "Uploading..." : "Upload Scan"}
             </Button>

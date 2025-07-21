@@ -50,6 +50,12 @@ export const reportSchema = z.object({
   project_scope_notes: z.string().optional(),
   conclusion: z.string().optional(),
   
+  // Executive Report Specific
+  confidentiality_level: z.string().default("Internal"),
+  legal_disclaimer: z.string().default("This document contains confidential and proprietary information."),
+  pdf_generated_at: z.string().datetime().optional(),
+  pdf_file_path: z.string().optional(),
+  
   // Status & Timestamps
   status: z.enum(["processing", "completed", "failed"]).default("processing"),
   upload_date: z.string().datetime().optional(),

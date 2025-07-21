@@ -111,6 +111,36 @@ export class ReportRepository {
   }
 
   /**
+   * Get the next iteration number for a given organization and source type
+   */
+  async getNextIteration(orgName: string, sourceType: "internal" | "external"): Promise<number> {
+    try {
+      const { data, error } = await this.client
+        .from("reports")
+        .select("iteration")
+        .eq("org_name", orgName)
+        .eq("source_type", sourceType)
+        .order("iteration", { ascending: false })
+        .limit(1);
+
+      if (error) {
+        throw new DatabaseError(error.message);
+      }
+
+      // If no reports exist for this org/source type, start with iteration 1
+      if (!data || data.length === 0) {
+        return 1;
+      }
+
+      // Return the next iteration number
+      return (data[0].iteration || 0) + 1;
+    } catch (error) {
+      if (error instanceof DatabaseError) throw error;
+      throw new DatabaseError(`Failed to get next iteration: ${error}`);
+    }
+  }
+
+  /**
    * Update report status and metadata
    */
   async updateStatus(id: string, status: "processing" | "completed" | "failed", processedDate?: Date): Promise<Report> {

@@ -95,16 +95,17 @@ function VulnerabilitiesContent() {
 
   // Group vulnerabilities by CVE
   const cveSummary = filteredVulnerabilities.reduce((acc, vuln) => {
-    if (!acc[vuln.cve]) {
-      acc[vuln.cve] = {
+    const cveKey = vuln.cve || 'no-cve';
+    if (!acc[cveKey]) {
+      acc[cveKey] = {
         severity: vuln.severity,
         plugin_name: vuln.plugin_name,
         count: 0,
         ips: new Set<string>()
       };
     }
-    acc[vuln.cve].count++;
-    acc[vuln.cve].ips.add(vuln.ip_address);
+    acc[cveKey].count++;
+    acc[cveKey].ips.add(vuln.ip_address);
     return acc;
   }, {} as Record<string, { severity: string; plugin_name?: string; count: number; ips: Set<string> }>);
 

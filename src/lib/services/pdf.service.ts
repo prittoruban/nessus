@@ -711,23 +711,24 @@ export class PDFService {
     const grouped = vulnerabilities
       .filter(v => v.cve && v.cve !== 'N/A')
       .reduce((acc, vuln) => {
-        if (!acc[vuln.cve]) {
-          acc[vuln.cve] = {
-            cve: vuln.cve,
+        const cveKey = vuln.cve!; // We know it's not null due to the filter above
+        if (!acc[cveKey]) {
+          acc[cveKey] = {
+            cve: cveKey,
             total: 0,
             severity: vuln.severity,
             affectedIPs: new Set<string>(),
             vulnerabilities: []
           };
         }
-        acc[vuln.cve].total++;
-        acc[vuln.cve].affectedIPs.add(vuln.ip_address);
-        acc[vuln.cve].vulnerabilities.push(vuln);
+        acc[cveKey].total++;
+        acc[cveKey].affectedIPs.add(vuln.ip_address);
+        acc[cveKey].vulnerabilities.push(vuln);
         
         // Keep highest severity
         const severityOrder: Record<string, number> = { high: 0, medium: 1, low: 2, info: 3 };
-        if (severityOrder[vuln.severity] < severityOrder[acc[vuln.cve].severity]) {
-          acc[vuln.cve].severity = vuln.severity;
+        if (severityOrder[vuln.severity] < severityOrder[acc[cveKey].severity]) {
+          acc[cveKey].severity = vuln.severity;
         }
         return acc;
       }, {} as Record<string, { cve: string; total: number; severity: string; affectedIPs: Set<string>; vulnerabilities: Vulnerability[] }>);
