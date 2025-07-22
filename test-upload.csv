@@ -1,0 +1,5 @@
+Host,Risk,Name,Description,CVE,CVSS,Port,Protocol,Service,Plugin ID
+192.168.1.10,Critical,Apache HTTP Server Multiple Vulnerabilities,Multiple vulnerabilities in Apache HTTP Server allowing remote code execution,CVE-2024-1234,9.8,80,tcp,http,12345
+192.168.1.20,High,OpenSSL Heartbleed Vulnerability,The Heartbleed vulnerability allows attackers to read memory,CVE-2014-0160,7.5,443,tcp,https,54321
+192.168.1.10,Medium,Weak SSL Cipher Suites,The server supports weak SSL cipher suites,,5.0,443,tcp,https,67890
+192.168.1.30,Low,HTTP Server Banner Disclosure,The HTTP server reveals version information,,2.0,80,tcp,http,11111
