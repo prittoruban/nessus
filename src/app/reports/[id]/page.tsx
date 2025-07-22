@@ -605,7 +605,7 @@ export default function ReportPage() {
             
             <p>
               We strongly recommend prioritizing the remediation of <strong>{report.critical_count} critical</strong> and <strong>{report.high_count} high-severity</strong> vulnerabilities 
-              as they pose the most significant risk to the organization's security posture. The <strong>{report.medium_count} medium-severity</strong> vulnerabilities 
+              as they pose the most significant risk to the organization&apos;s security posture. The <strong>{report.medium_count} medium-severity</strong> vulnerabilities 
               should be addressed in the next maintenance cycle, while low-severity issues can be scheduled for routine maintenance.
             </p>
             

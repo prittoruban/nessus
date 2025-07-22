@@ -51,10 +51,10 @@ interface VulnerabilityData {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { reportId: string } }
+  { params }: { params: Promise<{ reportId: string }> }
 ) {
   try {
-    const { reportId } = params
+    const { reportId } = await params
     const supabase = createServerSupabase()
 
     // Fetch report data
