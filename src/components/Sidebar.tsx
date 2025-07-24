@@ -18,31 +18,31 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   {
     name: 'Dashboard',
-    icon: '🏠',
+    icon: '●',
     path: '/',
     description: 'Overview & Analytics'
   },
   {
     name: 'Upload Scans',
-    icon: '📤',
+    icon: '↑',
     path: '/upload',
     description: 'Import vulnerability data'
   },
   {
     name: 'Reports',
-    icon: '📋',
+    icon: '□',
     path: '/reports',
     description: 'Manage assessments'
   },
   {
     name: 'Risk Insights',
-    icon: '📊',
+    icon: '⟨⟩',
     path: '/insights',
     description: 'Vulnerability trends'
   },
   {
     name: 'Executive Summary',
-    icon: '📈',
+    icon: '▲',
     path: '/overview',
     description: 'Leadership dashboard'
   }
@@ -81,16 +81,16 @@ export default function Sidebar({ className = '' }: SidebarProps) {
       <div className="p-6 border-b border-slate-700/50 backdrop-blur-sm bg-slate-800/30">
         <div className="flex items-center space-x-4">
           <div className="relative">
-            <div className="w-14 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <span className="text-white font-bold text-2xl">🛡️</span>
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <span className="text-white font-bold text-lg">VA</span>
             </div>
-            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse shadow-lg shadow-green-400/50"></div>
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900"></div>
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
-              VA Portal
+            <h1 className="text-lg font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+              Vulnerability Portal
             </h1>
-            <p className="text-slate-400 text-sm font-medium">Vulnerability Assessment</p>
+            <p className="text-slate-400 text-sm font-medium">Assessment Platform</p>
           </div>
         </div>
       </div>
@@ -119,15 +119,15 @@ export default function Sidebar({ className = '' }: SidebarProps) {
               )}
               
               {/* Icon */}
-              <div className={`text-2xl transition-all duration-300 ${
-                isActive ? 'scale-110 drop-shadow-lg' : 'group-hover:scale-110'
+              <div className={`text-lg font-bold transition-all duration-300 ${
+                isActive ? 'scale-110 drop-shadow-lg text-blue-400' : 'group-hover:scale-110 text-slate-400'
               }`}>
                 {item.icon}
               </div>
               
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <div className={`font-semibold transition-colors duration-300 ${
+                <div className={`font-semibold text-sm transition-colors duration-300 ${
                   isActive ? 'text-white' : 'text-slate-200 group-hover:text-white'
                 }`}>
                   {item.name}
@@ -159,11 +159,11 @@ export default function Sidebar({ className = '' }: SidebarProps) {
       <div className="p-4 border-t border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
         <div className="flex items-center justify-between text-xs text-slate-400">
           <div className="flex items-center space-x-2">
-            <span className="font-medium">Portal v2.1</span>
-            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md text-xs border border-blue-500/30">Pro</span>
+            <span className="font-medium">Version 2.1</span>
+            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded text-xs border border-blue-500/30">Enterprise</span>
           </div>
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm shadow-green-400/50"></div>
+            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
             <span className="font-medium">Secure</span>
           </div>
         </div>

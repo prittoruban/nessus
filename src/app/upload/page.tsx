@@ -297,14 +297,14 @@ export default function UploadPage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
-              <span className="text-white text-3xl">📤</span>
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl mb-6 shadow-lg">
+              <span className="text-white text-lg font-bold">↑</span>
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
+            <h1 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">
               Upload Vulnerability Scan
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              Upload your Nessus CSV scan results with comprehensive metadata for professional vulnerability assessment reporting and analysis.
+            <p className="text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              Import your Nessus CSV scan results with comprehensive metadata for professional vulnerability assessment reporting and analysis.
             </p>
           </div>
 
@@ -313,31 +313,31 @@ export default function UploadPage() {
             <div className="flex items-center justify-center space-x-4">
               {[1, 2, 3].map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shadow-lg ${
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
                     step >= stepNumber 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-blue-500/30 scale-110' 
-                      : 'bg-white text-slate-400 border-2 border-slate-200 shadow-slate-200/50'
+                      ? 'bg-blue-600 text-white shadow-lg' 
+                      : 'bg-white text-slate-400 border-2 border-slate-200'
                   }`}>
                     {step > stepNumber ? '✓' : stepNumber}
                   </div>
                   {stepNumber < 3 && (
-                    <div className={`w-20 h-2 mx-3 rounded-full transition-all duration-300 ${
-                      step > stepNumber ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-slate-200'
+                    <div className={`w-16 h-1 mx-3 rounded-full transition-all duration-300 ${
+                      step > stepNumber ? 'bg-blue-600' : 'bg-slate-200'
                     }`} />
                   )}
                 </div>
               ))}
             </div>
-            <div className="flex justify-center mt-6 space-x-28">
-              <span className={`text-sm font-semibold transition-colors duration-300 ${
+            <div className="flex justify-center mt-4 space-x-24">
+              <span className={`text-sm font-medium transition-colors duration-300 ${
                 step >= 1 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Organization Details</span>
-              <span className={`text-sm font-semibold transition-colors duration-300 ${
+              }`}>Organization</span>
+              <span className={`text-sm font-medium transition-colors duration-300 ${
                 step >= 2 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Scan Information</span>
-              <span className={`text-sm font-semibold transition-colors duration-300 ${
+              }`}>Assessment</span>
+              <span className={`text-sm font-medium transition-colors duration-300 ${
                 step >= 3 ? 'text-blue-600' : 'text-slate-400'
-              }`}>File Upload</span>
+              }`}>Upload</span>
             </div>
           </div>
 
@@ -347,7 +347,7 @@ export default function UploadPage() {
               {/* Step 1: Organization Details */}
               {step === 1 && (
                 <div className="p-8 space-y-6 animate-in slide-in-from-right-5 duration-300">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-6">Organization Details</h2>
+                  <h2 className="text-xl font-bold text-slate-900 mb-6">Organization Information</h2>
                   
                   {/* Source Type Selection */}
                   <div className="space-y-3">
@@ -460,7 +460,7 @@ export default function UploadPage() {
               {/* Step 2: Scan Details */}
               {step === 2 && (
                 <div className="p-8 space-y-6 animate-in slide-in-from-right-5 duration-300">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-6">Scan Details</h2>
+                  <h2 className="text-xl font-bold text-slate-900 mb-6">Assessment Information</h2>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-3">
@@ -575,7 +575,7 @@ export default function UploadPage() {
               {/* Step 3: File Upload */}
               {step === 3 && (
                 <div className="p-8 space-y-6 animate-in slide-in-from-right-5 duration-300">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-6">Upload CSV File</h2>
+                  <h2 className="text-xl font-bold text-slate-900 mb-6">Upload Scan Data</h2>
                   
                   <div
                     className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
@@ -598,10 +598,10 @@ export default function UploadPage() {
                     />
                     
                     <div className="space-y-4">
-                      <div className={`text-6xl transition-transform duration-300 ${
+                      <div className={`text-4xl transition-transform duration-300 ${
                         dragActive ? 'scale-110' : ''
                       }`}>
-                        {formData.csvFile ? '✅' : '📎'}
+                        {formData.csvFile ? '✓' : '↑'}
                       </div>
                       
                       {formData.csvFile ? (
@@ -656,8 +656,8 @@ export default function UploadPage() {
                   {/* Success Message */}
                   {uploadSuccess && (
                     <div className="text-center space-y-3 animate-in fade-in-up duration-500">
-                      <div className="text-6xl">✅</div>
-                      <h3 className="text-xl font-semibold text-green-700">Upload Successful!</h3>
+                      <div className="text-4xl text-green-600">✓</div>
+                      <h3 className="text-lg font-semibold text-green-700">Upload Successful</h3>
                       <p className="text-green-600">Your vulnerability scan has been processed and saved.</p>
                       <p className="text-sm text-green-500">Redirecting to reports page...</p>
                     </div>
@@ -666,7 +666,7 @@ export default function UploadPage() {
                   {/* Error Message */}
                   {errors.submit && (
                     <div className="text-center space-y-3 p-4 bg-red-50 rounded-xl border border-red-200">
-                      <div className="text-4xl">❌</div>
+                      <div className="text-3xl text-red-600">×</div>
                       <h3 className="text-lg font-semibold text-red-700">Upload Failed</h3>
                       <p className="text-red-600">{errors.submit}</p>
                       <button

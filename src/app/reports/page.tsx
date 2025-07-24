@@ -298,13 +298,13 @@ export default function ReportsPage() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-slate-600 to-slate-700 rounded-2xl mb-6 shadow-lg">
-              <span className="text-white text-3xl">📋</span>
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl mb-6 shadow-lg">
+              <span className="text-white text-lg font-bold">□</span>
             </div>
-            <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
+            <h1 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">
               Vulnerability Assessment Reports
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
               Manage and view all your vulnerability assessment reports with advanced filtering, search capabilities, and professional export options.
             </p>
           </div>
@@ -315,21 +315,21 @@ export default function ReportsPage() {
               {/* Search */}
               <div className="relative flex-1 max-w-lg">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-slate-400 text-xl">🔍</span>
+                  <span className="text-slate-400 text-lg">⌕</span>
                 </div>
                 <input
                   type="text"
                   placeholder="Search organizations, assessees, or assessors..."
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
-                  className="w-full pl-14 pr-12 py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-slate-900 placeholder-slate-500"
+                  className="w-full pl-12 pr-12 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-slate-900 placeholder-slate-500"
                 />
                 {filters.search && (
                   <button
                     onClick={() => updateFilter('search', '')}
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors duration-200"
                   >
-                    <span className="text-lg">✕</span>
+                    <span className="text-lg">×</span>
                   </button>
                 )}
               </div>
@@ -365,7 +365,7 @@ export default function ReportsPage() {
                       : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
                   }`}
                 >
-                  <span className="mr-2">🔧</span>
+                  <span className="mr-2">⚙</span>
                   Advanced Filters
                 </button>
               </div>
@@ -470,8 +470,8 @@ export default function ReportsPage() {
           {/* Reports Grid */}
           {filteredReports.length === 0 ? (
             <div className="text-center py-16">
-              <div className="text-6xl mb-4">📄</div>
-              <h3 className="text-2xl font-semibold text-slate-700 mb-2">No reports found</h3>
+              <div className="text-4xl mb-4 text-slate-400">□</div>
+              <h3 className="text-xl font-semibold text-slate-700 mb-2">No reports found</h3>
               <p className="text-slate-500 mb-6">
                 {filters.search || filters.sourceType !== 'all' || filters.status !== 'all' 
                   ? 'Try adjusting your filters to see more results.'
@@ -502,19 +502,19 @@ export default function ReportsPage() {
                         {report.org_name}
                       </h3>
                       <div className="flex items-center space-x-2 text-sm">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${
+                        <span className={`px-2 py-1 rounded text-xs font-semibold border ${
                           report.source_type === 'internal' 
                             ? 'bg-blue-100 text-blue-800 border-blue-200' 
                             : 'bg-purple-100 text-purple-800 border-purple-200'
                         }`}>
-                          {report.source_type === 'internal' ? '🏢 Internal' : '🌐 External'}
+                          {report.source_type === 'internal' ? 'Internal' : 'External'}
                         </span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${getStatusColor(report.status)}`}>
+                        <span className={`px-2 py-1 rounded text-xs font-semibold border ${getStatusColor(report.status)}`}>
                           {report.status}
                         </span>
                       </div>
                     </div>
-                    <div className="text-2xl">📋</div>
+                    <div className="text-xl text-slate-400">□</div>
                   </div>
 
                   {/* Iteration Info */}

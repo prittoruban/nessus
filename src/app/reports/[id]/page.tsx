@@ -187,10 +187,11 @@ export default function ReportPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading report...</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center bg-white rounded-2xl p-8 shadow-xl border border-slate-200">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-500 border-t-transparent mx-auto mb-6"></div>
+          <h3 className="text-lg font-semibold text-slate-900 mb-2">Loading Report</h3>
+          <p className="text-slate-600">Fetching vulnerability assessment data...</p>
         </div>
       </div>
     )
@@ -198,14 +199,16 @@ export default function ReportPage() {
 
   if (error || !report) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-red-600 text-xl mb-4">{error || 'Report not found'}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="text-center bg-white rounded-2xl p-8 shadow-xl border border-red-200">
+          <div className="text-4xl text-red-500 mb-4">⚠</div>
+          <h2 className="text-xl font-bold text-red-600 mb-4">Report Not Found</h2>
+          <p className="text-slate-600 mb-6">{error || 'The requested report could not be found.'}</p>
           <button
-            onClick={() => router.push('/upload')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={() => router.push('/reports')}
+            className="px-6 py-3 bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-colors duration-300"
           >
-            Back to Upload
+            Back to Reports
           </button>
         </div>
       </div>
@@ -242,7 +245,7 @@ export default function ReportPage() {
               </>
             ) : (
               <>
-                <span className="mr-3">📄</span>
+                <span className="mr-3">↓</span>
                 Download Executive Report
               </>
             )}
@@ -255,51 +258,51 @@ export default function ReportPage() {
         
         {/* SECTION 1: COVER PAGE */}
         <section className="bg-white rounded-2xl shadow-xl border border-slate-200 p-12 text-center space-y-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
-            <span className="text-white text-4xl">🛡️</span>
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl mb-6 shadow-lg">
+            <span className="text-white text-2xl font-bold">VA</span>
           </div>
           
-          <h1 className="text-5xl font-bold text-slate-900 mb-8 tracking-tight">
+          <h1 className="text-4xl font-bold text-slate-900 mb-8 tracking-tight">
             {report.source_type === 'internal' ? 'Internal' : 'External'} Vulnerability Assessment Report
           </h1>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
             <div className="space-y-6">
               <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="block text-lg font-semibold text-slate-700 mb-2">Organization Name</span>
-                <span className="text-2xl font-bold text-slate-900">{report.org_name}</span>
+                <span className="block text-base font-semibold text-slate-700 mb-2">Organization Name</span>
+                <span className="text-xl font-bold text-slate-900">{report.org_name}</span>
               </div>
               <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="block text-lg font-semibold text-slate-700 mb-2">Report Version</span>
-                <span className="text-2xl font-bold text-slate-900">{report.version}</span>
+                <span className="block text-base font-semibold text-slate-700 mb-2">Report Version</span>
+                <span className="text-xl font-bold text-slate-900">{report.version}</span>
               </div>
             </div>
             <div className="space-y-6">
               <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="block text-lg font-semibold text-slate-700 mb-2">Assessment Period</span>
-                <span className="text-xl font-semibold text-slate-900">
+                <span className="block text-base font-semibold text-slate-700 mb-2">Assessment Period</span>
+                <span className="text-lg font-semibold text-slate-900">
                   {new Date(report.scan_start_date).toLocaleDateString()} - {new Date(report.scan_end_date).toLocaleDateString()}
                 </span>
               </div>
               <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="block text-lg font-semibold text-slate-700 mb-2">Document Type</span>
-                <span className="text-2xl font-bold text-slate-900">{report.document_type}</span>
+                <span className="block text-base font-semibold text-slate-700 mb-2">Document Type</span>
+                <span className="text-xl font-bold text-slate-900">{report.document_type}</span>
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto pt-10">
             {[
-              { label: 'Assessee', value: report.assessee, icon: '👤' },
-              { label: 'Assessor', value: report.assessor, icon: '🔍' },
-              { label: 'Reviewer', value: report.reviewer, icon: '📋' },
-              { label: 'Approved by', value: report.approver, icon: '✅' }
+              { label: 'Assessee', value: report.assessee, icon: 'A' },
+              { label: 'Assessor', value: report.assessor, icon: 'S' },
+              { label: 'Reviewer', value: report.reviewer, icon: 'R' },
+              { label: 'Approved by', value: report.approver, icon: 'P' }
             ].map((item, index) => (
               <div key={index} className="p-6 bg-white rounded-xl border border-slate-200 shadow-lg">
-                <div className="text-2xl mb-3">{item.icon}</div>
+                <div className="text-lg font-bold text-blue-600 mb-3">{item.icon}</div>
                 <span className="block font-semibold text-slate-700 mb-3">{item.label}</span>
                 <div className="border-b-2 border-slate-300 pb-2 min-h-[2.5rem]">
-                  <span className="text-lg font-medium text-slate-900">{item.value}</span>
+                  <span className="text-base font-medium text-slate-900">{item.value}</span>
                 </div>
               </div>
             ))}
