@@ -1,19 +1,21 @@
 import Link from "next/link";
+import AppLayout from "@/components/AppLayout";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        {/* Header */}
-        <div className="text-center mb-16">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            🛡️ Nessus VA Report Portal
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            A comprehensive vulnerability assessment reporting platform for managing Nessus scan results, 
-            generating professional reports, and tracking security insights across your organization.
-          </p>
-        </div>
+    <AppLayout>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="container mx-auto px-4 py-16">
+          {/* Header */}
+          <div className="text-center mb-16">
+            <h1 className="text-5xl font-bold text-gray-900 mb-6">
+              🛡️ Nessus VA Report Portal
+            </h1>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+              A comprehensive vulnerability assessment reporting platform for managing Nessus scan results, 
+              generating professional reports, and tracking security insights across your organization.
+            </p>
+          </div>
 
         {/* Main Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto mb-16">
@@ -149,6 +151,7 @@ export default function Home() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

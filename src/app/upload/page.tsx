@@ -1,7 +1,9 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import AppLayout from '@/components/AppLayout'
 
 type Organization = {
   id: string
@@ -38,13 +40,16 @@ type PreviousReport = {
 }
 
 export default function UploadPage() {
+  const searchParams = useSearchParams()
+  const sourceFromUrl = searchParams.get('source') as 'internal' | 'external' | null
+  
   const [organizations, setOrganizations] = useState<Organization[]>([])
   const [filteredOrgs, setFilteredOrgs] = useState<Organization[]>([])
   const [previousReports, setPreviousReports] = useState<PreviousReport[]>([])
   const [orgSuggestions, setOrgSuggestions] = useState<Organization[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [formData, setFormData] = useState<UploadFormData>({
-    sourceType: 'internal',
+    sourceType: sourceFromUrl || 'internal',
     organizationId: '',
     organizationName: '',
     assessee: '',
@@ -309,20 +314,35 @@ export default function UploadPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
-              <span className="text-white text-2xl">🔺</span>
+    <AppLayout>
+      <div className="min-h-screen bg-gray-50 py-8">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="bg-white rounded-lg shadow-lg p-6 mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white text-2xl">�</span>
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {formData.sourceType === 'internal' ? 'Internal' : 'External'} Scan Upload
+                </h1>
+                <p className="text-gray-600">Upload Nessus CSV scan results for vulnerability assessment</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Quick Scan Upload</h1>
-              <p className="text-gray-600">Upload Nessus CSV scan results for vulnerability assessment</p>
+            
+            {/* Source Type Indicator */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-500">Assessment Type:</span>
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                formData.sourceType === 'internal' 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-orange-100 text-orange-800'
+              }`}>
+                {formData.sourceType === 'internal' ? '🏢 Internal' : '🌐 External'}
+              </span>
             </div>
           </div>
-        </div>
 
         {/* Upload Form */}
         <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-lg p-8 space-y-8">
@@ -664,5 +684,6 @@ export default function UploadPage() {
         </form>
       </div>
     </div>
+    </AppLayout>
   )
 }
