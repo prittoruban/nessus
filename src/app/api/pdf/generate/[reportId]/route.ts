@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase-server";
 import puppeteer from "puppeteer";
+import fs from "fs";
+import path from "path";
 
 // Types
 interface ReportData {
@@ -24,6 +26,21 @@ interface ReportData {
   low_count: number;
   info_count: number;
   zero_day_count: number;
+}
+
+// Helper function to convert image to base64
+function getImageAsBase64(imagePath: string): string {
+  try {
+    const fullPath = path.join(process.cwd(), 'public', imagePath);
+    const imageBuffer = fs.readFileSync(fullPath);
+    const base64 = imageBuffer.toString('base64');
+    const extension = path.extname(imagePath).toLowerCase();
+    const mimeType = extension === '.png' ? 'image/png' : 'image/jpeg';
+    return `data:${mimeType};base64,${base64}`;
+  } catch (error) {
+    console.error(`Error loading image ${imagePath}:`, error);
+    return '';
+  }
 }
 
 interface HostData {
@@ -106,23 +123,25 @@ export async function GET(
     const pdfBuffer = await page.pdf({
       format: "A4",
       margin: {
-        top: "20mm",
+        top: "15mm",
         right: "20mm",
-        bottom: "20mm",
+        bottom: "15mm",
         left: "20mm",
       },
       printBackground: true,
       displayHeaderFooter: true,
       headerTemplate: `
-        <div style="font-size: 10px; text-align: center; width: 100%; color: #666;">
-          ${report.org_name} - Vulnerability Assessment Report
+        <div style="font-size: 9pt; text-align: center; width: 100%; color: #4a5568; font-family: 'Segoe UI', sans-serif; padding: 5pt 0; border-bottom: 1pt solid #e2e8f0;">
+          <strong>${report.org_name}</strong> - Vulnerability Assessment Report | <span style="color: #2b6cb0;">CONFIDENTIAL</span>
         </div>
       `,
       footerTemplate: `
-        <div style="font-size: 10px; text-align: center; width: 100%; color: #666;">
-          Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+        <div style="font-size: 9pt; text-align: center; width: 100%; color: #4a5568; font-family: 'Segoe UI', sans-serif; padding: 5pt 0; border-top: 1pt solid #e2e8f0;">
+          <span style="color: #2b6cb0;">HTC Global Services</span> | Page <span class="pageNumber"></span> of <span class="totalPages"></span> | <span style="font-style: italic;">Generated on ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
         </div>
       `,
+      preferCSSPageSize: true,
+      scale: 0.95,
     });
 
     await browser.close();
@@ -160,6 +179,10 @@ function generateEnhancedReportHTML(
 ): string {
   const startDate = new Date(report.scan_start_date);
   const endDate = new Date(report.scan_end_date);
+  
+  // Convert images to base64
+  const htcLogoBase64 = getImageAsBase64('HTC.png');
+  const methodologyImageBase64 = getImageAsBase64('Methodology.png');
   
   const riskModel = [
     {
@@ -228,15 +251,15 @@ function generateEnhancedReportHTML(
   const getSeverityStyle = (severity: string) => {
     switch (severity.toLowerCase()) {
       case "critical":
-        return "color: #dc2626; background-color: #fef2f2; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+        return "color: #991b1b; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); padding: 6pt 12pt; border-radius: 4pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5pt; border: 1pt solid #fca5a5;";
       case "high":
-        return "color: #ea580c; background-color: #fff7ed; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+        return "color: #c2410c; background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%); padding: 6pt 12pt; border-radius: 4pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5pt; border: 1pt solid #fb923c;";
       case "medium":
-        return "color: #d97706; background-color: #fffbeb; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+        return "color: #a16207; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 6pt 12pt; border-radius: 4pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5pt; border: 1pt solid #facc15;";
       case "low":
-        return "color: #2563eb; background-color: #eff6ff; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+        return "color: #1e40af; background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); padding: 6pt 12pt; border-radius: 4pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5pt; border: 1pt solid #93c5fd;";
       default:
-        return "color: #374151; background-color: #f9fafb; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+        return "color: #374151; background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%); padding: 6pt 12pt; border-radius: 4pt; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5pt; border: 1pt solid #d1d5db;";
     }
   };
 
@@ -248,248 +271,472 @@ function generateEnhancedReportHTML(
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${report.org_name} - Vulnerability Assessment Report</title>
       <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { 
+          margin: 0; 
+          padding: 0; 
+          box-sizing: border-box; 
+        }
+        
+        @page {
+          size: A4;
+          margin: 15mm 20mm 15mm 20mm;
+        }
         
         body { 
-          font-family: 'Arial', sans-serif; 
-          line-height: 1.6; 
-          color: #333; 
-          font-size: 14px;
+          font-family: 'Segoe UI', 'Calibri', 'Arial', sans-serif; 
+          line-height: 1.7; 
+          color: #2c3e50; 
+          font-size: 11pt;
+          margin: 0;
+          padding: 0;
+          background-color: #ffffff;
+        }
+        
+        .page-container {
+          border: 1.5pt solid #34495e;
+          margin: 8pt;
+          padding: 20pt;
+          min-height: calc(100vh - 50mm);
+          position: relative;
+          page-break-after: always;
+          background-color: #ffffff;
+          box-shadow: 0 2pt 4pt rgba(0,0,0,0.1);
+        }
+        
+        .page-container:last-child {
+          page-break-after: auto;
         }
         
         .cover-page { 
-          height: 100vh; 
+          height: calc(100vh - 60pt); 
           display: flex; 
           flex-direction: column; 
           justify-content: space-between; 
-          padding: 40px; 
-          page-break-after: always;
+          padding: 0; 
           text-align: center;
+          position: relative;
         }
         
         .header-section {
-          margin-bottom: 40px;
+          margin-bottom: 45pt;
         }
         
         .cover-title { 
-          font-size: 28px; 
-          font-weight: bold; 
-          color: #1f2937; 
-          margin-bottom: 30px;
-          border-bottom: 3px solid #3b82f6;
-          padding-bottom: 15px;
+          font-size: 22pt; 
+          font-weight: 700; 
+          color: #1a365d; 
+          margin-bottom: 35pt;
+          border-bottom: 3pt solid #2b6cb0;
+          padding-bottom: 18pt;
+          letter-spacing: 0.5pt;
+          text-transform: uppercase;
         }
         
         .org-name {
-          font-size: 32px;
-          font-weight: bold;
-          color: #1f2937;
-          margin: 30px 0;
+          font-size: 28pt;
+          font-weight: 800;
+          color: #1a202c;
+          margin: 40pt 0 35pt 0;
+          text-shadow: 1pt 1pt 2pt rgba(0,0,0,0.1);
+          letter-spacing: 1pt;
         }
         
         .scan-dates {
-          font-size: 16px;
-          margin: 20px 0;
-          color: #4b5563;
+          font-size: 12pt;
+          margin: 25pt 0;
+          color: #4a5568;
+          font-weight: 500;
+          line-height: 1.6;
         }
         
         .company-info {
           text-align: left;
-          background-color: #f8fafc;
-          padding: 25px;
-          border-radius: 10px;
-          margin: 30px 0;
+          background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+          padding: 30pt;
+          border-radius: 8pt;
+          margin: 35pt 0;
+          border: 1pt solid #e2e8f0;
+          box-shadow: 0 2pt 8pt rgba(0,0,0,0.08);
+        }
+        
+        .htc-logo {
+          text-align: center;
+          margin: 25pt 0;
+          padding: 15pt;
+        }
+        
+        .htc-logo img {
+          max-width: 200pt;
+          max-height: 80pt;
+          object-fit: contain;
+          filter: drop-shadow(0 2pt 4pt rgba(0,0,0,0.1));
         }
         
         .company-header {
-          font-size: 18px;
-          font-weight: bold;
-          color: #1f2937;
-          margin-bottom: 15px;
+          font-size: 16pt;
+          font-weight: 700;
+          color: #1a365d;
+          margin-bottom: 18pt;
+          text-align: center;
+          border-bottom: 1pt solid #cbd5e0;
+          padding-bottom: 12pt;
         }
         
         .company-details {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 20px;
-          margin-top: 15px;
+          gap: 25pt;
+          margin-top: 18pt;
+          font-size: 10pt;
+          line-height: 1.6;
         }
         
         .doc-control-table {
-          margin: 30px 0;
+          margin: 35pt 0;
         }
         
         .doc-control-table table {
           width: 100%;
           border-collapse: collapse;
-          margin: 20px 0;
+          margin: 25pt 0;
+          background-color: #ffffff;
+          border: 1pt solid #cbd5e0;
+          box-shadow: 0 2pt 4pt rgba(0,0,0,0.05);
         }
         
         .doc-control-table th,
         .doc-control-table td {
-          border: 1px solid #d1d5db;
-          padding: 12px;
+          border: 1pt solid #e2e8f0;
+          padding: 12pt 15pt;
           text-align: left;
+          font-size: 10pt;
         }
         
         .doc-control-table th {
-          background-color: #f9fafb;
-          font-weight: bold;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          font-weight: 600;
+          color: #2d3748;
         }
         
         .disclaimers {
           margin-top: auto;
-          font-size: 12px;
-          color: #6b7280;
+          font-size: 9pt;
+          color: #718096;
           font-style: italic;
           line-height: 1.5;
         }
         
         .disclaimer-box {
-          background-color: #fef3c7;
-          border: 1px solid #f59e0b;
-          padding: 15px;
-          margin: 10px 0;
-          border-radius: 5px;
+          background: linear-gradient(135deg, #fef5e7 0%, #fed7aa 100%);
+          border: 1pt solid #f6ad55;
+          padding: 15pt;
+          margin: 12pt 0;
+          border-radius: 6pt;
+          font-weight: 500;
+          box-shadow: 0 2pt 4pt rgba(0,0,0,0.05);
         }
         
         .section { 
-          margin: 30px 0; 
-          padding: 0 20px;
+          margin: 30pt 0; 
+          padding: 0 12pt;
+        }
+        
+        .toc-section {
+          padding: 0;
         }
         
         h1 { 
-          font-size: 24px; 
-          font-weight: bold; 
-          color: #1f2937; 
-          margin-bottom: 20px;
-          border-bottom: 2px solid #3b82f6;
-          padding-bottom: 10px;
+          font-size: 18pt; 
+          font-weight: 700; 
+          color: #1a365d; 
+          margin-bottom: 25pt;
+          border-bottom: 2pt solid #2b6cb0;
+          padding-bottom: 12pt;
+          text-transform: uppercase;
+          letter-spacing: 0.8pt;
         }
         
         h2 { 
-          font-size: 20px; 
-          font-weight: bold; 
-          color: #374151; 
-          margin: 25px 0 15px 0;
+          font-size: 14pt; 
+          font-weight: 600; 
+          color: #2d3748; 
+          margin: 28pt 0 18pt 0;
+          padding-bottom: 8pt;
+          border-bottom: 1pt solid #e2e8f0;
         }
         
         h3 { 
-          font-size: 16px; 
-          font-weight: bold; 
-          color: #4b5563; 
-          margin: 20px 0 10px 0;
+          font-size: 12pt; 
+          font-weight: 600; 
+          color: #4a5568; 
+          margin: 22pt 0 12pt 0;
+          padding-left: 8pt;
+          border-left: 3pt solid #2b6cb0;
         }
         
         p { 
-          margin-bottom: 15px; 
+          margin-bottom: 15pt; 
           text-align: justify;
+          line-height: 1.7;
+          font-size: 11pt;
+          text-indent: 0;
         }
         
         table { 
           width: 100%; 
           border-collapse: collapse; 
-          margin: 20px 0; 
-          font-size: 14px;
+          margin: 25pt 0; 
+          font-size: 10pt;
+          background-color: #ffffff;
+          border: 1pt solid #cbd5e0;
+          box-shadow: 0 2pt 6pt rgba(0,0,0,0.08);
         }
         
         th, td { 
-          padding: 12px; 
+          padding: 12pt 15pt; 
           text-align: left; 
-          border: 1px solid #d1d5db;
+          border: 1pt solid #e2e8f0;
+          vertical-align: top;
         }
         
         th { 
-          background-color: #f9fafb; 
-          font-weight: bold; 
-          color: #374151;
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          font-weight: 600; 
+          color: #2d3748;
+          font-size: 10pt;
+          text-transform: uppercase;
+          letter-spacing: 0.5pt;
         }
         
         .total-row { 
-          background-color: #f3f4f6; 
-          font-weight: bold;
+          background: linear-gradient(135deg, #edf2f7 0%, #e2e8f0 100%);
+          font-weight: 700;
+          border-top: 2pt solid #2b6cb0;
         }
         
         .manifest-section {
-          background-color: #f8fafc;
-          padding: 25px;
-          border-radius: 10px;
-          margin: 25px 0;
+          background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+          padding: 25pt;
+          border-radius: 8pt;
+          margin: 30pt 0;
+          border: 1pt solid #e2e8f0;
+          box-shadow: 0 3pt 8pt rgba(0,0,0,0.08);
         }
         
         .manifest-table table {
-          background-color: white;
-          border: 1px solid #e5e7eb;
+          background-color: #ffffff;
+          border: 1pt solid #cbd5e0;
         }
         
         .methodology-step { 
-          margin-bottom: 25px; 
-          padding: 20px; 
-          background-color: #f9fafb; 
-          border-radius: 8px;
-          border-left: 4px solid #3b82f6;
+          margin-bottom: 30pt; 
+          padding: 22pt; 
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+          border-radius: 8pt;
+          border-left: 4pt solid #2b6cb0;
+          box-shadow: 0 2pt 6pt rgba(0,0,0,0.05);
+        }
+        
+        .methodology-image {
+          text-align: center;
+          margin: 35pt 0;
+          padding: 20pt;
+          background-color: #ffffff;
+          border-radius: 8pt;
+          border: 1pt solid #e2e8f0;
+          box-shadow: 0 3pt 8pt rgba(0,0,0,0.08);
+        }
+        
+        .methodology-image img {
+          max-width: 100%;
+          max-height: 400pt;
+          object-fit: contain;
+          filter: drop-shadow(0 2pt 4pt rgba(0,0,0,0.1));
+        }
+        
+        .methodology-image-caption {
+          font-size: 10pt;
+          color: #4a5568;
+          margin-top: 12pt;
+          font-style: italic;
+          text-align: center;
         }
         
         .methodology-title {
-          font-weight: bold;
-          font-size: 16px;
-          color: #1f2937;
-          margin-bottom: 10px;
+          font-weight: 700;
+          font-size: 12pt;
+          color: #1a365d;
+          margin-bottom: 12pt;
+          text-transform: uppercase;
+          letter-spacing: 0.5pt;
         }
         
         .zero-day-section { 
-          background-color: #fef2f2; 
-          border: 2px solid #fecaca; 
-          border-radius: 8px; 
-          padding: 25px; 
-          margin: 25px 0;
+          background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+          border: 2pt solid #fc8181; 
+          border-radius: 8pt; 
+          padding: 30pt; 
+          margin: 30pt 0;
+          box-shadow: 0 4pt 12pt rgba(220, 38, 38, 0.15);
         }
         
         .zero-day-header {
-          color: #dc2626;
-          font-size: 20px;
-          font-weight: bold;
-          margin-bottom: 15px;
+          color: #c53030;
+          font-size: 16pt;
+          font-weight: 700;
+          margin-bottom: 18pt;
+          text-transform: uppercase;
+          letter-spacing: 0.8pt;
+          text-align: center;
+          border-bottom: 2pt solid #c53030;
+          padding-bottom: 12pt;
         }
         
         .page-break { 
-          page-break-before: always;
+          page-break-before: auto;
         }
         
         .severity-badge { 
           display: inline-block; 
-          padding: 4px 8px; 
-          border-radius: 4px; 
-          font-size: 12px; 
-          font-weight: 600;
+          padding: 6pt 12pt; 
+          border-radius: 4pt; 
+          font-size: 9pt; 
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5pt;
         }
         
         .toc-section {
-          padding: 40px;
+          padding: 0;
           page-break-after: always;
         }
         
         .toc-item {
           display: flex;
           justify-content: space-between;
-          padding: 8px 0;
-          border-bottom: 1px dotted #d1d5db;
+          padding: 12pt 0;
+          border-bottom: 1pt dotted #cbd5e0;
+          font-size: 11pt;
+          line-height: 1.5;
+        }
+        
+        .toc-item:hover {
+          background-color: #f7fafc;
         }
         
         .scope-table {
-          margin: 20px 0;
+          margin: 25pt 0;
         }
         
         .executive-summary {
+          background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+          padding: 30pt;
+          border-radius: 8pt;
+          margin: 30pt 0;
+          border: 1pt solid #e2e8f0;
+          box-shadow: 0 3pt 8pt rgba(0,0,0,0.08);
+        }
+        
+        .status-active {
+          color: #065f46;
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+          padding: 4pt 8pt;
+          border-radius: 4pt;
+          font-weight: 600;
+          font-size: 9pt;
+          text-transform: uppercase;
+        }
+        
+        .status-failed {
+          color: #991b1b;
+          background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+          padding: 4pt 8pt;
+          border-radius: 4pt;
+          font-weight: 600;
+          font-size: 9pt;
+          text-transform: uppercase;
+        }
+        
+        .risk-summary-table {
+          max-width: 450pt;
+          margin: 25pt auto;
+        }
+        
+        .conclusion-section {
+          font-size: 11pt;
+          line-height: 1.8;
+          text-align: justify;
+        }
+        
+        .conclusion-section p {
+          margin-bottom: 18pt;
+        }
+        
+        .critical-notice {
+          background: linear-gradient(135deg, #fed7d7 0%, #feb2b2 100%);
+          padding: 25pt;
+          border-radius: 8pt;
+          border: 2pt solid #fc8181;
+          margin: 25pt 0;
+          box-shadow: 0 4pt 12pt rgba(220, 38, 38, 0.15);
+        }
+        
+        .document-end {
+          text-align: center;
+          margin-top: 50pt;
+          padding-top: 25pt;
+          border-top: 3pt solid #2b6cb0;
+          font-weight: 700;
+          font-size: 14pt;
+          color: #1a365d;
+          letter-spacing: 2pt;
+        }
+        
+        /* Improved typography */
+        .section-number {
+          color: #2b6cb0;
+          font-weight: 700;
+        }
+        
+        .highlight-text {
+          background-color: #fff3cd;
+          padding: 2pt 4pt;
+          border-radius: 2pt;
+          font-weight: 600;
+        }
+        
+        .code-text {
+          font-family: 'Courier New', monospace;
+          background-color: #f8f9fa;
+          padding: 2pt 4pt;
+          border-radius: 2pt;
+          border: 1pt solid #e9ecef;
+        }
+        
+        /* Enhanced table styling */
+        .data-table {
+          border: 1pt solid #2b6cb0;
+        }
+        
+        .data-table thead th {
+          background: linear-gradient(135deg, #2b6cb0 0%, #1e40af 100%);
+          color: #ffffff;
+          text-align: center;
+          font-weight: 700;
+        }
+        
+        .data-table tbody tr:nth-child(even) {
           background-color: #f8fafc;
-          padding: 25px;
-          border-radius: 10px;
-          margin: 25px 0;
+        }
+        
+        .data-table tbody tr:hover {
+          background-color: #e2e8f0;
         }
       </style>
     </head>
     <body>
       <!-- COVER PAGE -->
+      <div class="page-container">
       <div class="cover-page">
         <div class="header-section">
           <div class="cover-title">
@@ -518,6 +765,10 @@ function generateEnhancedReportHTML(
                 Phone: (248)7862500
               </div>
             </div>
+          </div>
+          
+          <div class="htc-logo">
+            <img src="${htcLogoBase64}" alt="HTC Global Services Logo" />
           </div>
           
           <div class="doc-control-table">
@@ -565,9 +816,11 @@ function generateEnhancedReportHTML(
           </div>
         </div>
       </div>
+      </div> <!-- Close cover page container -->
 
       <!-- SCAN MANIFEST -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>Scan Manifest</h1>
         <div class="manifest-section">
           <table class="manifest-table">
@@ -598,9 +851,11 @@ function generateEnhancedReportHTML(
           </table>
         </div>
       </div>
+      </div> <!-- Close scan manifest container -->
 
       <!-- TABLE OF CONTENTS -->
-      <div class="toc-section page-break">
+      <div class="page-container">
+      <div class="toc-section">
         <h1>Table of Contents</h1>
         <div style="margin-top: 30px;">
           <div class="toc-item">
@@ -645,9 +900,11 @@ function generateEnhancedReportHTML(
           </div>
         </div>
       </div>
+      </div> <!-- Close TOC container -->
 
       <!-- EXECUTIVE SUMMARY -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>1. Executive Summary</h1>
         
         <h2>1.1 Overview</h2>
@@ -674,7 +931,7 @@ function generateEnhancedReportHTML(
         <h2>1.2 Risk Model</h2>
         <p>Throughout this document, HTC has categorized the risk ratings for discovered vulnerabilities based on Global Standard risk definitions.</p>
         
-        <table>
+        <table class="data-table">
           <thead>
             <tr>
               <th>Priority Level</th>
@@ -688,10 +945,10 @@ function generateEnhancedReportHTML(
               .map(
                 (risk) => `
               <tr>
-                <td style="font-weight: bold;">${risk.priority}</td>
+                <td style="font-weight: 700; color: #1a365d; text-align: center;">${risk.priority}</td>
                 <td><span style="${getSeverityStyle(risk.severity)}">${risk.severity}</span></td>
-                <td style="font-family: monospace;">${risk.cvss}</td>
-                <td>${risk.description}</td>
+                <td style="font-family: 'Courier New', monospace; text-align: center; font-weight: 600;">${risk.cvss}</td>
+                <td style="line-height: 1.6;">${risk.description}</td>
               </tr>
             `
               )
@@ -699,13 +956,16 @@ function generateEnhancedReportHTML(
           </tbody>
         </table>
       </div>
+      </div> <!-- Close executive summary container -->
 
       <!-- METHODOLOGY -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>2. Vulnerability Assessment Methodology</h1>
         
         <h2>2.1 Methodology</h2>
         ${methodologySteps
+          .slice(0, 4)
           .map(
             (step, index) => `
           <div class="methodology-step">
@@ -715,10 +975,31 @@ function generateEnhancedReportHTML(
         `
           )
           .join("")}
+          
+        <div class="methodology-image">
+          <img src="${methodologyImageBase64}" alt="Vulnerability Assessment Methodology Flow" />
+          <div class="methodology-image-caption">
+            Figure 1: Vulnerability Assessment Methodology Flow Chart
+          </div>
+        </div>
+        
+        ${methodologySteps
+          .slice(4)
+          .map(
+            (step, index) => `
+          <div class="methodology-step">
+            <div class="methodology-title">${index + 5}. ${step.title}:</div>
+            <p>${step.description}</p>
+          </div>
+        `
+          )
+          .join("")}
       </div>
+      </div> <!-- Close methodology container -->
 
       <!-- PROJECT SCOPE -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>2.2 Project Scope</h1>
         <p>
           Formal communication from the customer outlined the IPs to be tested and the type of testing to be carried out. 
@@ -727,12 +1008,12 @@ function generateEnhancedReportHTML(
         </p>
         
         <h3>Scope Of IP's</h3>
-        <table class="scope-table">
+        <table class="scope-table data-table">
           <thead>
             <tr>
-              <th style="width: 80px;">S No</th>
+              <th style="width: 80pt;">S No</th>
               <th>IP Address</th>
-              <th style="width: 120px;">Status</th>
+              <th style="width: 120pt;">Status</th>
             </tr>
           </thead>
           <tbody>
@@ -740,13 +1021,11 @@ function generateEnhancedReportHTML(
               .map(
                 (host, index) => `
               <tr>
-                <td>${index + 1}</td>
-                <td style="font-family: monospace;">${host.ip_address}</td>
-                <td><span style="${
-                  host.scan_status === "completed"
-                    ? "color: #059669; background-color: #d1fae5;"
-                    : "color: #dc2626; background-color: #fee2e2;"
-                } padding: 4px 8px; border-radius: 4px; font-weight: 600;">${
+                <td style="text-align: center; font-weight: 600;">${index + 1}</td>
+                <td><span class="code-text">${host.ip_address}</span></td>
+                <td style="text-align: center;"><span class="${
+                  host.scan_status === "completed" ? "status-active" : "status-failed"
+                }">${
                   host.scan_status.charAt(0).toUpperCase() +
                   host.scan_status.slice(1)
                 }</span></td>
@@ -762,11 +1041,13 @@ function generateEnhancedReportHTML(
           Password cracking, physical, process, and social engineering attacks.
         </p>
       </div>
+      </div> <!-- Close project scope container -->
 
       <!-- SUMMARY OF VULNERABLE HOSTS -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>3. Summary of Vulnerable Hosts in Network Segments</h1>
-        <table>
+        <table class="data-table">
           <thead>
             <tr>
               <th>S.No</th>
@@ -783,31 +1064,31 @@ function generateEnhancedReportHTML(
               .map(
                 (host, index) => `
               <tr>
-                <td>${index + 1}</td>
-                <td style="font-family: monospace;">${host.ip_address}</td>
-                <td style="text-align: center;">${host.critical_count}</td>
-                <td style="text-align: center;">${host.high_count}</td>
-                <td style="text-align: center;">${host.medium_count}</td>
-                <td style="text-align: center;">${host.low_count}</td>
-                <td style="text-align: center; font-weight: bold;">${host.total_vulnerabilities}</td>
+                <td style="text-align: center; font-weight: 600;">${index + 1}</td>
+                <td><span class="code-text">${host.ip_address}</span></td>
+                <td style="text-align: center; font-weight: 600; color: #991b1b;">${host.critical_count}</td>
+                <td style="text-align: center; font-weight: 600; color: #c2410c;">${host.high_count}</td>
+                <td style="text-align: center; font-weight: 600; color: #a16207;">${host.medium_count}</td>
+                <td style="text-align: center; font-weight: 600; color: #1e40af;">${host.low_count}</td>
+                <td style="text-align: center; font-weight: 700; color: #1a365d;">${host.total_vulnerabilities}</td>
               </tr>
             `
               )
               .join("")}
             <tr class="total-row">
-              <td style="font-weight: bold;">Total Count</td>
-              <td style="font-weight: bold;"></td>
-              <td style="text-align: center; font-weight: bold;">${report.critical_count}</td>
-              <td style="text-align: center; font-weight: bold;">${report.high_count}</td>
-              <td style="text-align: center; font-weight: bold;">${report.medium_count}</td>
-              <td style="text-align: center; font-weight: bold;">${report.low_count}</td>
-              <td style="text-align: center; font-weight: bold;">${report.total_vulnerabilities}</td>
+              <td style="font-weight: 700;">Total Count</td>
+              <td style="font-weight: 700;"></td>
+              <td style="text-align: center; font-weight: 700; color: #991b1b;">${report.critical_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #c2410c;">${report.high_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #a16207;">${report.medium_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #1e40af;">${report.low_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #1a365d;">${report.total_vulnerabilities}</td>
             </tr>
           </tbody>
         </table>
         
         <h3>Vulnerabilities count based on Risk Levels</h3>
-        <table style="max-width: 400px;">
+        <table class="risk-summary-table data-table">
           <thead>
             <tr>
               <th>Risk</th>
@@ -817,31 +1098,33 @@ function generateEnhancedReportHTML(
           <tbody>
             <tr>
               <td><span style="${getSeverityStyle('Critical')}">Critical</span></td>
-              <td style="text-align: center; font-weight: bold;">${report.critical_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #991b1b; font-size: 12pt;">${report.critical_count}</td>
             </tr>
             <tr>
               <td><span style="${getSeverityStyle('High')}">High</span></td>
-              <td style="text-align: center; font-weight: bold;">${report.high_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #c2410c; font-size: 12pt;">${report.high_count}</td>
             </tr>
             <tr>
               <td><span style="${getSeverityStyle('Medium')}">Medium</span></td>
-              <td style="text-align: center; font-weight: bold;">${report.medium_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #a16207; font-size: 12pt;">${report.medium_count}</td>
             </tr>
             <tr>
               <td><span style="${getSeverityStyle('Low')}">Low</span></td>
-              <td style="text-align: center; font-weight: bold;">${report.low_count}</td>
+              <td style="text-align: center; font-weight: 700; color: #1e40af; font-size: 12pt;">${report.low_count}</td>
             </tr>
             <tr class="total-row">
-              <td style="font-weight: bold;">Grand Total</td>
-              <td style="text-align: center; font-weight: bold;">${report.total_vulnerabilities}</td>
+              <td style="font-weight: 700;">Grand Total</td>
+              <td style="text-align: center; font-weight: 700; color: #1a365d; font-size: 14pt;">${report.total_vulnerabilities}</td>
             </tr>
           </tbody>
         </table>
       </div>
+      </div> <!-- Close vulnerable hosts summary container -->
 
       <!-- ZERO DAY VULNERABILITIES -->
       ${zeroDayVulns.length > 0 ? `
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>4. Zero Day Vulnerabilities</h1>
         
         <div class="zero-day-section">
@@ -901,10 +1184,12 @@ function generateEnhancedReportHTML(
           </tbody>
         </table>
       </div>
+      </div> <!-- Close zero day container -->
       ` : ''}
 
       <!-- VULNERABILITIES WITH REMEDIATION -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>5. Vulnerabilities finding with Remediation</h1>
         <table>
           <thead>
@@ -941,52 +1226,55 @@ function generateEnhancedReportHTML(
           </tbody>
         </table>
       </div>
+      </div> <!-- Close vulnerabilities container -->
 
       <!-- CONCLUSION -->
-      <div class="section page-break">
+      <div class="page-container">
+      <div class="section">
         <h1>6. Conclusion</h1>
-        <div style="font-size: 16px; line-height: 1.7; space-y: 20px;">
-          <p style="margin-bottom: 20px;">
-            Nevertheless, we suggest that IP's allocated to <strong>${report.org_name}</strong>, implement the recommendations in this document with respect to the affected servers and devices. We also propose to follow-on retest to verify that the recommended changes were made and made correctly. Please note that as technologies and risks change over time, the vulnerabilities associated with the operation of the systems described in this report, as well as the actions necessary to reduce the exposure to such vulnerabilities, will also change.
+        <div class="conclusion-section">
+          <p>
+            Nevertheless, we suggest that IP's allocated to <span class="highlight-text">${report.org_name}</span>, implement the recommendations in this document with respect to the affected servers and devices. We also propose to follow-on retest to verify that the recommended changes were made and made correctly. Please note that as technologies and risks change over time, the vulnerabilities associated with the operation of the systems described in this report, as well as the actions necessary to reduce the exposure to such vulnerabilities, will also change.
           </p>
           
-          <p style="margin-bottom: 20px;">
-            The vulnerability assessment of <strong>${report.org_name}</strong> has identified <strong>${report.total_vulnerabilities}</strong> vulnerabilities 
-            across <strong>${report.total_ips_tested}</strong> tested systems. The findings reveal a mix of security issues ranging from 
+          <p>
+            The vulnerability assessment of <span class="highlight-text">${report.org_name}</span> has identified <span class="highlight-text">${report.total_vulnerabilities}</span> vulnerabilities 
+            across <span class="highlight-text">${report.total_ips_tested}</span> tested systems. The findings reveal a mix of security issues ranging from 
             critical vulnerabilities requiring immediate attention to informational findings that provide security insights.
           </p>
           
-          <p style="margin-bottom: 20px;">
-            We strongly recommend prioritizing the remediation of <strong>${report.critical_count} critical</strong> and <strong>${report.high_count} high-severity</strong> vulnerabilities 
-            as they pose the most significant risk to the organization's security posture. The <strong>${report.medium_count} medium-severity</strong> vulnerabilities 
+          <p>
+            We strongly recommend prioritizing the remediation of <span style="color: #991b1b; font-weight: 700;">${report.critical_count} critical</span> and <span style="color: #c2410c; font-weight: 700;">${report.high_count} high-severity</span> vulnerabilities 
+            as they pose the most significant risk to the organization's security posture. The <span style="color: #a16207; font-weight: 700;">${report.medium_count} medium-severity</span> vulnerabilities 
             should be addressed in the next maintenance cycle, while low-severity issues can be scheduled for routine maintenance.
           </p>
           
           ${report.zero_day_count > 0 ? `
-          <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; border: 2px solid #fecaca; margin: 20px 0;">
-            <p style="margin: 0; font-weight: bold;">
-              <strong>Critical Notice:</strong> This assessment identified <strong>${report.zero_day_count} zero-day vulnerabilities</strong> that require 
+          <div class="critical-notice">
+            <p style="margin: 0; font-weight: 700;">
+              <strong>🚨 Critical Notice:</strong> This assessment identified <span class="highlight-text">${report.zero_day_count} zero-day vulnerabilities</span> that require 
               immediate attention due to their recent disclosure and potential for exploitation.
             </p>
           </div>
           ` : ""}
           
-          <p style="margin-bottom: 20px;">
+          <p>
             Following the remediation efforts, we recommend conducting a follow-up assessment to verify that vulnerabilities have been 
             properly addressed and that no new security issues have been introduced during the remediation process.
           </p>
           
-          <p style="margin-bottom: 20px;">
+          <p>
             The cybersecurity landscape continues to evolve rapidly, with new threats and vulnerabilities emerging regularly. We recommend 
             implementing a continuous vulnerability management program that includes regular scanning, timely patching procedures, and 
             security awareness training for all personnel.
           </p>
           
-          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
-            <p style="font-weight: bold; font-size: 18px;">------END OF THE DOCUMENT----</p>
+          <div class="document-end">
+            ------END OF THE DOCUMENT----
           </div>
         </div>
       </div>
+      </div> <!-- Close conclusion container -->
     </body>
     </html>
   `;
