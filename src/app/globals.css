@@ -317,3 +317,48 @@ html {
   .text-display-sm { font-size: 1.5rem; }
   .text-display-xs { font-size: 1.25rem; }
 }
+
+/* Back to Top Button Enhancements */
+.back-to-top {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.2);
+}
+
+.back-to-top:hover {
+  box-shadow: 0 8px 25px 0 rgba(59, 130, 246, 0.35);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.back-to-top:active {
+  transform: translateY(0) scale(1);
+}
+
+/* Mobile adjustments for back-to-top button */
+@media (max-width: 768px) {
+  .back-to-top {
+    bottom: 1rem !important;
+    right: 1rem !important;
+    padding: 0.75rem !important;
+  }
+}
+
+/* Ensure button stays above all content */
+.back-to-top {
+  z-index: 9999;
+}
+
+/* Animation for smooth appearance */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.3s ease-out;
+}
