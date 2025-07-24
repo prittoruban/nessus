@@ -781,6 +781,65 @@ function generateEnhancedReportHTML(
           overflow: hidden;
         }
         
+        /* Vulnerability Chart Styles */
+        .vulnerability-chart {
+          margin: 30px 0;
+          padding: 25px;
+          background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+          border-radius: 8px;
+          border: 1px solid #dee2e6;
+          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .chart-container {
+          max-width: 600px;
+          margin: 0 auto;
+        }
+        
+        .chart-bar-row {
+          display: flex;
+          align-items: center;
+          margin-bottom: 15px;
+          padding: 5px 0;
+        }
+        
+        .chart-label {
+          width: 80px;
+          margin-right: 15px;
+          text-align: right;
+        }
+        
+        .chart-bar-container {
+          flex: 1;
+          background: #e9ecef;
+          border-radius: 4px;
+          overflow: hidden;
+          height: 25px;
+          position: relative;
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .chart-bar {
+          transition: width 0.3s ease;
+          position: relative;
+          height: 100%;
+          min-width: 30px;
+          border-radius: 4px;
+        }
+        
+        .chart-value {
+          font-family: 'Monaco', 'Menlo', monospace;
+          font-size: 11px;
+          font-weight: 700;
+        }
+        
+        .severity-badge {
+          font-family: 'Segoe UI', sans-serif;
+          letter-spacing: 0.3px;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+          white-space: nowrap;
+        }
+        
         /* Conclusion */
         .conclusion-section {
           font-size: 12px;
@@ -1483,6 +1542,35 @@ function generateEnhancedReportHTML(
               </tr>
             </tbody>
           </table>
+          
+          <div class="vulnerability-chart">
+            <h4 style="text-align: center; margin: 25px 0 20px 0; color: #2c3e50; font-size: 14px; font-weight: 600;">Vulnerability Distribution by Severity</h4>
+            <div class="chart-container">
+              ${[
+                { label: "Critical", count: report.critical_count, color: "#d32f2f", maxCount: Math.max(report.critical_count, report.high_count, report.medium_count, report.low_count, report.info_count) },
+                { label: "High", count: report.high_count, color: "#f57c00", maxCount: Math.max(report.critical_count, report.high_count, report.medium_count, report.low_count, report.info_count) },
+                { label: "Medium", count: report.medium_count, color: "#fbc02d", maxCount: Math.max(report.critical_count, report.high_count, report.medium_count, report.low_count, report.info_count) },
+                { label: "Low", count: report.low_count, color: "#1976d2", maxCount: Math.max(report.critical_count, report.high_count, report.medium_count, report.low_count, report.info_count) },
+                { label: "Info", count: report.info_count, color: "#757575", maxCount: Math.max(report.critical_count, report.high_count, report.medium_count, report.low_count, report.info_count) }
+              ]
+                .map(item => {
+                  const percentage = item.maxCount > 0 ? (item.count / item.maxCount) * 100 : 0;
+                  return `
+                <div class="chart-bar-row">
+                  <div class="chart-label">
+                    <span class="severity-badge" style="background: ${item.color}; color: white; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 600; text-transform: uppercase;">${item.label}</span>
+                  </div>
+                  <div class="chart-bar-container">
+                    <div class="chart-bar" style="width: ${percentage}%; background: linear-gradient(90deg, ${item.color}, ${item.color}dd); height: 25px; border-radius: 4px; position: relative; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                      <span class="chart-value" style="position: absolute; right: 8px; top: 50%; transform: translateY(-50%); color: white; font-weight: 700; font-size: 11px; text-shadow: 0 1px 2px rgba(0,0,0,0.3);">${item.count}</span>
+                    </div>
+                  </div>
+                </div>
+              `;
+                })
+                .join("")}
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1511,7 +1599,7 @@ function generateEnhancedReportHTML(
                     ).length;
                     return `
                     <tr>
-                      <td><span style="${getSeverityStyle(
+                      <td><span class="${getSeverityStyle(
                         severity
                       )}">${severity}</span></td>
                       <td style="text-align: center; font-weight: bold;">${count}</td>
@@ -1552,7 +1640,7 @@ function generateEnhancedReportHTML(
                   <td><span class="code-text">${
                     vuln.cve_id || "N/A"
                   }</span></td>
-                  <td style="text-align: center;"><span style="${getSeverityStyle(
+                  <td style="text-align: center;"><span class="${getSeverityStyle(
                     vuln.severity
                   )}">${vuln.severity}</span></td>
                   <td><span class="code-text">${vuln.host_ip}</span></td>
@@ -1597,7 +1685,7 @@ function generateEnhancedReportHTML(
                   <td style="text-align: center; font-weight: bold;">${
                     index + 1
                   }</td>
-                  <td style="text-align: center;"><span style="${getSeverityStyle(
+                  <td style="text-align: center;"><span class="${getSeverityStyle(
                     vuln.severity
                   )}">${vuln.severity}</span></td>
                   <td><span class="code-text">${vuln.host_ip}</span></td>
