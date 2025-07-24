@@ -4,6 +4,22 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import {
+  CloudArrowUpIcon,
+  DocumentTextIcon,
+  BuildingOfficeIcon,
+  UserGroupIcon,
+  CalendarDaysIcon,
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  XMarkIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon
+} from '@heroicons/react/24/outline'
+import {
+  CloudArrowUpIcon as CloudArrowUpIconSolid,
+  CheckCircleIcon as CheckCircleIconSolid
+} from '@heroicons/react/24/solid'
 
 type Organization = {
   id: string
@@ -300,75 +316,80 @@ export default function UploadPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl mb-6 shadow-lg">
-              <span className="text-white text-lg font-bold">↑</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
+              <CloudArrowUpIcon className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">
+            <h1 className="text-display-md font-bold text-gray-900 mb-4">
               Upload Vulnerability Scan
             </h1>
-            <p className="text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Import your Nessus CSV scan results with comprehensive metadata for professional vulnerability assessment reporting and analysis.
             </p>
           </div>
 
           {/* Progress Steps */}
           <div className="mb-8">
-            <div className="flex items-center justify-center space-x-4">
-              {[1, 2, 3].map((stepNumber) => (
-                <div key={stepNumber} className="flex items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 ${
-                    step >= stepNumber 
-                      ? 'bg-blue-600 text-white shadow-lg' 
-                      : 'bg-white text-slate-400 border-2 border-slate-200'
-                  }`}>
-                    {step > stepNumber ? '✓' : stepNumber}
+            <div className="flex items-center justify-center space-x-8">
+              {[
+                { number: 1, label: 'Organization', icon: BuildingOfficeIcon },
+                { number: 2, label: 'Assessment', icon: UserGroupIcon },
+                { number: 3, label: 'Upload', icon: DocumentTextIcon }
+              ].map((stepItem, index) => (
+                <div key={stepItem.number} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                      step >= stepItem.number 
+                        ? 'bg-blue-600 text-white shadow-lg' 
+                        : 'bg-white text-gray-400 border-2 border-gray-200 shadow-sm'
+                    }`}>
+                      {step > stepItem.number ? (
+                        <CheckCircleIcon className="h-6 w-6" />
+                      ) : (
+                        <stepItem.icon className="h-6 w-6" />
+                      )}
+                    </div>
+                    <span className={`mt-2 text-sm font-medium transition-colors duration-300 ${
+                      step >= stepItem.number ? 'text-blue-600' : 'text-gray-400'
+                    }`}>
+                      {stepItem.label}
+                    </span>
                   </div>
-                  {stepNumber < 3 && (
-                    <div className={`w-16 h-1 mx-3 rounded-full transition-all duration-300 ${
-                      step > stepNumber ? 'bg-blue-600' : 'bg-slate-200'
+                  {index < 2 && (
+                    <div className={`w-20 h-0.5 mx-4 transition-all duration-300 ${
+                      step > stepItem.number ? 'bg-blue-600' : 'bg-gray-200'
                     }`} />
                   )}
                 </div>
               ))}
             </div>
-            <div className="flex justify-center mt-4 space-x-24">
-              <span className={`text-sm font-medium transition-colors duration-300 ${
-                step >= 1 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Organization</span>
-              <span className={`text-sm font-medium transition-colors duration-300 ${
-                step >= 2 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Assessment</span>
-              <span className={`text-sm font-medium transition-colors duration-300 ${
-                step >= 3 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Upload</span>
-            </div>
           </div>
 
-          {/* Main Form */}
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden">
+          {/* Main Form Card */}
+          <div className="card card-hover overflow-hidden">
             <form onSubmit={handleSubmit}>
               {/* Step 1: Organization Details */}
               {step === 1 && (
-                <div className="p-8 space-y-6 animate-in slide-in-from-right-5 duration-300">
-                  <h2 className="text-xl font-bold text-slate-900 mb-6">Organization Information</h2>
+                <div className="p-8 animate-fade-in-up">
+                  <div className="flex items-center mb-8">
+                    <BuildingOfficeIcon className="h-8 w-8 text-blue-600 mr-3" />
+                    <h2 className="text-2xl font-bold text-gray-900">Organization Information</h2>
+                  </div>
                   
                   {/* Source Type Selection */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      Assessment Type
-                    </label>
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="mb-8">
+                    <label className="form-label">Assessment Type</label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {(['internal', 'external'] as const).map((type) => (
                         <label
                           key={type}
-                          className={`relative flex items-center p-4 rounded-xl border-2 cursor-pointer transition-all duration-300 hover:shadow-md ${
+                          className={`relative flex items-center p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                             formData.sourceType === type
-                              ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-500/20'
-                              : 'border-slate-200 bg-white hover:border-slate-300'
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                           }`}
                         >
                           <input
@@ -378,19 +399,19 @@ export default function UploadPage() {
                             onChange={(e) => handleInputChange('sourceType', e.target.value as 'internal' | 'external')}
                             className="sr-only"
                           />
-                          <div className="flex items-center space-x-3">
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                          <div className="flex items-center space-x-4">
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all duration-200 ${
                               formData.sourceType === type
                                 ? 'border-blue-500 bg-blue-500'
-                                : 'border-slate-300'
+                                : 'border-gray-300'
                             }`}>
                               {formData.sourceType === type && (
-                                <div className="w-2 h-2 bg-white rounded-full"></div>
+                                <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                               )}
                             </div>
                             <div>
-                              <div className="font-semibold text-slate-900 capitalize">{type}</div>
-                              <div className="text-sm text-slate-500">
+                              <div className="font-semibold text-gray-900 capitalize text-lg">{type}</div>
+                              <div className="text-gray-500">
                                 {type === 'internal' ? 'Internal network assessment' : 'External perimeter assessment'}
                               </div>
                             </div>
@@ -401,11 +422,9 @@ export default function UploadPage() {
                   </div>
 
                   {/* Organization Selection */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      Organization
-                    </label>
-                    <div className="relative">
+                  <div className="mb-8">
+                    <label className="form-label">Organization</label>
+                    <div className="space-y-4">
                       <select
                         value={formData.organizationId}
                         onChange={(e) => {
@@ -415,46 +434,67 @@ export default function UploadPage() {
                             handleInputChange('organizationName', selectedOrg.name)
                           }
                         }}
-                        className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white"
+                        className="form-input"
                       >
-                        <option value="">Select an organization</option>
+                        <option value="">Select an existing organization</option>
                         {organizations.map((org) => (
                           <option key={org.id} value={org.id}>
                             {org.name}
                           </option>
                         ))}
                       </select>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-300" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="px-2 bg-white text-gray-500">or create new</span>
+                        </div>
+                      </div>
+                      
+                      <input
+                        type="text"
+                        placeholder="Enter new organization name"
+                        value={formData.organizationName}
+                        onChange={(e) => handleInputChange('organizationName', e.target.value)}
+                        className={`form-input ${
+                          errors.organizationName ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
+                        }`}
+                      />
+                      {errors.organizationName && (
+                        <div className="flex items-center space-x-2 text-red-600 text-sm">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.organizationName}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-center text-slate-500">or</div>
-                    <input
-                      type="text"
-                      placeholder="Enter new organization name"
-                      value={formData.organizationName}
-                      onChange={(e) => handleInputChange('organizationName', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                        errors.organizationName ? 'border-red-500' : 'border-slate-300'
-                      }`}
-                    />
-                    {errors.organizationName && (
-                      <p className="text-red-500 text-sm">{errors.organizationName}</p>
-                    )}
                   </div>
 
                   {/* Previous Reports Preview */}
                   {previousReports.length > 0 && (
-                    <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                      <h3 className="font-semibold text-slate-900 mb-4">Previous Reports</h3>
-                      <div className="space-y-3 max-h-32 overflow-y-auto">
+                    <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
+                      <h3 className="font-semibold text-gray-900 mb-4 flex items-center">
+                        <DocumentTextIcon className="h-5 w-5 text-gray-600 mr-2" />
+                        Previous Reports
+                      </h3>
+                      <div className="space-y-3 max-h-40 overflow-y-auto">
                         {previousReports.map((report) => (
-                          <div key={report.id} className="flex items-center justify-between py-2 px-3 bg-white rounded-lg border border-slate-200">
+                          <div key={report.id} className="flex items-center justify-between py-3 px-4 bg-white rounded-lg border border-gray-200 hover:shadow-sm transition-shadow">
                             <div>
-                              <div className="font-medium text-slate-900">Iteration #{report.iteration_number}</div>
-                              <div className="text-sm text-slate-500">
+                              <div className="font-medium text-gray-900">Iteration #{report.iteration_number}</div>
+                              <div className="text-sm text-gray-500 flex items-center">
+                                <CalendarDaysIcon className="h-4 w-4 mr-1" />
                                 {new Date(report.scan_start_date).toLocaleDateString()} - {new Date(report.scan_end_date).toLocaleDateString()}
                               </div>
                             </div>
-                            <div className="text-sm text-slate-600">
-                              {report.total_vulnerabilities} vulnerabilities
+                            <div className="text-right">
+                              <div className="text-sm font-medium text-gray-900">
+                                {report.total_vulnerabilities} vulnerabilities
+                              </div>
+                              <div className="text-xs text-gray-500">
+                                Critical: {report.critical_count} | High: {report.high_count}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -464,134 +504,150 @@ export default function UploadPage() {
                 </div>
               )}
 
-              {/* Step 2: Scan Details */}
+              {/* Step 2: Assessment Details */}
               {step === 2 && (
-                <div className="p-8 space-y-6 animate-in slide-in-from-right-5 duration-300">
-                  <h2 className="text-xl font-bold text-slate-900 mb-6">Assessment Information</h2>
+                <div className="p-8 animate-fade-in-up">
+                  <div className="flex items-center mb-8">
+                    <UserGroupIcon className="h-8 w-8 text-blue-600 mr-3" />
+                    <h2 className="text-2xl font-bold text-gray-900">Assessment Information</h2>
+                  </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        Assessee
-                      </label>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <label className="form-label">Assessee</label>
                       <input
                         type="text"
                         value={formData.assessee}
                         onChange={(e) => handleInputChange('assessee', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                          errors.assessee ? 'border-red-500' : 'border-slate-300'
+                        className={`form-input ${
+                          errors.assessee ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                         }`}
                         placeholder="Enter assessee name"
                       />
                       {errors.assessee && (
-                        <p className="text-red-500 text-sm">{errors.assessee}</p>
+                        <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.assessee}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        Assessor
-                      </label>
+                    <div>
+                      <label className="form-label">Assessor</label>
                       <input
                         type="text"
                         value={formData.assessor}
                         onChange={(e) => handleInputChange('assessor', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                          errors.assessor ? 'border-red-500' : 'border-slate-300'
+                        className={`form-input ${
+                          errors.assessor ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                         }`}
                         placeholder="Enter assessor name"
                       />
                       {errors.assessor && (
-                        <p className="text-red-500 text-sm">{errors.assessor}</p>
+                        <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.assessor}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        Reviewer
-                      </label>
+                    <div>
+                      <label className="form-label">Reviewer</label>
                       <input
                         type="text"
                         value={formData.reviewer}
                         onChange={(e) => handleInputChange('reviewer', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                          errors.reviewer ? 'border-red-500' : 'border-slate-300'
+                        className={`form-input ${
+                          errors.reviewer ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                         }`}
                         placeholder="Enter reviewer name"
                       />
                       {errors.reviewer && (
-                        <p className="text-red-500 text-sm">{errors.reviewer}</p>
+                        <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.reviewer}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
-                        Approver
-                      </label>
+                    <div>
+                      <label className="form-label">Approver</label>
                       <input
                         type="text"
                         value={formData.approver}
                         onChange={(e) => handleInputChange('approver', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                          errors.approver ? 'border-red-500' : 'border-slate-300'
+                        className={`form-input ${
+                          errors.approver ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                         }`}
                         placeholder="Enter approver name"
                       />
                       {errors.approver && (
-                        <p className="text-red-500 text-sm">{errors.approver}</p>
+                        <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.approver}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
+                    <div>
+                      <label className="form-label">
+                        <CalendarDaysIcon className="h-4 w-4 inline mr-1" />
                         Scan Start Date
                       </label>
                       <input
                         type="date"
                         value={formData.scanStartDate}
                         onChange={(e) => handleInputChange('scanStartDate', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                          errors.scanStartDate ? 'border-red-500' : 'border-slate-300'
+                        className={`form-input ${
+                          errors.scanStartDate ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                         }`}
                       />
                       {errors.scanStartDate && (
-                        <p className="text-red-500 text-sm">{errors.scanStartDate}</p>
+                        <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.scanStartDate}</span>
+                        </div>
                       )}
                     </div>
 
-                    <div className="space-y-3">
-                      <label className="block text-sm font-semibold text-slate-700">
+                    <div>
+                      <label className="form-label">
+                        <CalendarDaysIcon className="h-4 w-4 inline mr-1" />
                         Scan End Date
                       </label>
                       <input
                         type="date"
                         value={formData.scanEndDate}
                         onChange={(e) => handleInputChange('scanEndDate', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                          errors.scanEndDate ? 'border-red-500' : 'border-slate-300'
+                        className={`form-input ${
+                          errors.scanEndDate ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                         }`}
                       />
                       {errors.scanEndDate && (
-                        <p className="text-red-500 text-sm">{errors.scanEndDate}</p>
+                        <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                          <ExclamationTriangleIcon className="h-4 w-4" />
+                          <span>{errors.scanEndDate}</span>
+                        </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-slate-700">
-                      Test Performed At
-                    </label>
+                  <div className="mt-8">
+                    <label className="form-label">Test Performed At</label>
                     <input
                       type="text"
                       value={formData.testPerformedAt}
                       onChange={(e) => handleInputChange('testPerformedAt', e.target.value)}
                       placeholder="Enter test location (e.g., onsite, remote, hybrid)"
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
-                        errors.testPerformedAt ? 'border-red-500' : 'border-slate-300'
+                      className={`form-input ${
+                        errors.testPerformedAt ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : ''
                       }`}
                     />
                     {errors.testPerformedAt && (
-                      <p className="text-red-500 text-sm">{errors.testPerformedAt}</p>
+                      <div className="flex items-center space-x-2 text-red-600 text-sm mt-1">
+                        <ExclamationTriangleIcon className="h-4 w-4" />
+                        <span>{errors.testPerformedAt}</span>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -599,8 +655,11 @@ export default function UploadPage() {
 
               {/* Step 3: File Upload */}
               {step === 3 && (
-                <div className="p-8 space-y-6 animate-in slide-in-from-right-5 duration-300">
-                  <h2 className="text-xl font-bold text-slate-900 mb-6">Upload Scan Data</h2>
+                <div className="p-8 animate-fade-in-up">
+                  <div className="flex items-center mb-8">
+                    <CloudArrowUpIcon className="h-8 w-8 text-blue-600 mr-3" />
+                    <h2 className="text-2xl font-bold text-gray-900">Upload Scan Data</h2>
+                  </div>
                   
                   <div
                     className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
@@ -608,7 +667,7 @@ export default function UploadPage() {
                         ? 'border-blue-500 bg-blue-50'
                         : formData.csvFile
                         ? 'border-green-500 bg-green-50'
-                        : 'border-slate-300 bg-slate-50 hover:border-slate-400'
+                        : 'border-gray-300 bg-gray-50 hover:border-gray-400 hover:bg-gray-100'
                     }`}
                     onDragEnter={handleDrag}
                     onDragLeave={handleDrag}
@@ -622,36 +681,41 @@ export default function UploadPage() {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
                     
-                    <div className="space-y-4">
-                      <div className={`text-4xl transition-transform duration-300 ${
+                    <div className="space-y-6">
+                      <div className={`text-5xl transition-transform duration-300 ${
                         dragActive ? 'scale-110' : ''
                       }`}>
-                        {formData.csvFile ? '✓' : '↑'}
+                        {formData.csvFile ? (
+                          <CheckCircleIconSolid className="h-16 w-16 text-green-500 mx-auto" />
+                        ) : (
+                          <CloudArrowUpIconSolid className="h-16 w-16 text-gray-400 mx-auto" />
+                        )}
                       </div>
                       
                       {formData.csvFile ? (
-                        <div>
-                          <p className="text-lg font-semibold text-green-700">
+                        <div className="space-y-2">
+                          <p className="text-xl font-semibold text-green-700">
                             {formData.csvFile.name}
                           </p>
-                          <p className="text-sm text-green-600">
+                          <p className="text-green-600">
                             {(formData.csvFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                           <button
                             type="button"
                             onClick={() => handleFileChange(null)}
-                            className="mt-2 text-sm text-red-600 hover:text-red-700 underline"
+                            className="inline-flex items-center mt-3 text-sm text-red-600 hover:text-red-700 font-medium"
                           >
+                            <XMarkIcon className="h-4 w-4 mr-1" />
                             Remove file
                           </button>
                         </div>
                       ) : (
-                        <div>
-                          <p className="text-lg font-semibold text-slate-700">
+                        <div className="space-y-2">
+                          <p className="text-xl font-semibold text-gray-700">
                             Drop your CSV file here, or click to browse
                           </p>
-                          <p className="text-sm text-slate-500">
-                            Supports CSV files from Nessus exports
+                          <p className="text-gray-500">
+                            Supports CSV files from Nessus exports (max 50MB)
                           </p>
                         </div>
                       )}
@@ -659,19 +723,22 @@ export default function UploadPage() {
                   </div>
                   
                   {errors.csvFile && (
-                    <p className="text-red-500 text-sm text-center">{errors.csvFile}</p>
+                    <div className="flex items-center justify-center space-x-2 text-red-600 text-sm mt-4">
+                      <ExclamationTriangleIcon className="h-4 w-4" />
+                      <span>{errors.csvFile}</span>
+                    </div>
                   )}
 
                   {/* Upload Progress */}
                   {loading && (
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between text-sm">
-                        <span>Uploading...</span>
+                    <div className="mt-8 space-y-4">
+                      <div className="flex items-center justify-between text-sm font-medium text-gray-700">
+                        <span>Processing your vulnerability scan...</span>
                         <span>{uploadProgress}%</span>
                       </div>
-                      <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                         <div 
-                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-300 rounded-full"
+                          className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 rounded-full"
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
@@ -680,9 +747,9 @@ export default function UploadPage() {
 
                   {/* Success Message */}
                   {uploadSuccess && (
-                    <div className="text-center space-y-3 animate-in fade-in-up duration-500">
-                      <div className="text-4xl text-green-600">✓</div>
-                      <h3 className="text-lg font-semibold text-green-700">Upload Successful</h3>
+                    <div className="text-center space-y-4 mt-8 animate-fade-in-up">
+                      <CheckCircleIconSolid className="h-16 w-16 text-green-500 mx-auto" />
+                      <h3 className="text-xl font-semibold text-green-700">Upload Successful!</h3>
                       <p className="text-green-600">Your vulnerability scan has been processed and saved.</p>
                       <p className="text-sm text-green-500">Redirecting to reports page...</p>
                     </div>
@@ -690,15 +757,16 @@ export default function UploadPage() {
 
                   {/* Error Message */}
                   {errors.submit && (
-                    <div className="text-center space-y-3 p-4 bg-red-50 rounded-xl border border-red-200">
-                      <div className="text-3xl text-red-600">×</div>
+                    <div className="text-center space-y-4 mt-8 p-6 bg-red-50 rounded-xl border border-red-200">
+                      <ExclamationTriangleIcon className="h-12 w-12 text-red-500 mx-auto" />
                       <h3 className="text-lg font-semibold text-red-700">Upload Failed</h3>
                       <p className="text-red-600">{errors.submit}</p>
                       <button
                         type="button"
                         onClick={() => setErrors(prev => ({ ...prev, submit: '' }))}
-                        className="text-sm text-red-700 hover:text-red-800 underline"
+                        className="inline-flex items-center text-sm text-red-700 hover:text-red-800 font-medium"
                       >
+                        <XMarkIcon className="h-4 w-4 mr-1" />
                         Dismiss
                       </button>
                     </div>
@@ -707,39 +775,55 @@ export default function UploadPage() {
               )}
 
               {/* Navigation Buttons */}
-              <div className="px-8 py-6 bg-slate-50 border-t border-slate-200 flex justify-between">
+              <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
                 <button
                   type="button"
                   onClick={prevStep}
                   disabled={step === 1}
-                  className={`px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                  className={`inline-flex items-center px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
                     step === 1 
-                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed' 
-                      : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 hover:shadow-md'
+                      ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                      : 'btn-secondary'
                   }`}
                 >
+                  <ArrowLeftIcon className="h-4 w-4 mr-2" />
                   Previous
                 </button>
+
+                <div className="text-sm text-gray-500">
+                  Step {step} of 3
+                </div>
 
                 {step < 3 ? (
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="px-8 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                    className="btn-primary"
                   >
                     Next Step
+                    <ArrowRightIcon className="h-4 w-4 ml-2" />
                   </button>
                 ) : (
                   <button
                     type="submit"
-                    disabled={loading}
-                    className={`px-8 py-3 rounded-xl font-semibold transition-all duration-300 ${
-                      loading
-                        ? 'bg-slate-400 text-white cursor-not-allowed'
-                        : 'bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:scale-105'
+                    disabled={loading || uploadSuccess}
+                    className={`inline-flex items-center px-8 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                      loading || uploadSuccess
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:scale-105'
                     }`}
                   >
-                    {loading ? 'Uploading...' : 'Upload Scan'}
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <CloudArrowUpIcon className="h-4 w-4 mr-2" />
+                        Upload Scan
+                      </>
+                    )}
                   </button>
                 )}
               </div>
