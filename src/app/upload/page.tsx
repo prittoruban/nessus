@@ -316,50 +316,50 @@ export default function UploadPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto">
+      <div className="min-h-screen bg-gray-50 mt-10">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-6 shadow-lg">
               <CloudArrowUpIcon className="h-8 w-8 text-white" />
             </div>
-            <h1 className="text-display-md font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
               Upload Vulnerability Scan
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+            <p className="text-base text-gray-600 max-w-2xl mx-auto leading-relaxed">
               Import your Nessus CSV scan results with comprehensive metadata for professional vulnerability assessment reporting and analysis.
             </p>
           </div>
 
           {/* Progress Steps */}
           <div className="mb-8">
-            <div className="flex items-center justify-center space-x-8">
+            <div className="flex items-center justify-center space-x-4 sm:space-x-8 overflow-x-auto pb-2">
               {[
                 { number: 1, label: 'Organization', icon: BuildingOfficeIcon },
                 { number: 2, label: 'Assessment', icon: UserGroupIcon },
                 { number: 3, label: 'Upload', icon: DocumentTextIcon }
               ].map((stepItem, index) => (
-                <div key={stepItem.number} className="flex items-center">
+                <div key={stepItem.number} className="flex items-center flex-shrink-0">
                   <div className="flex flex-col items-center">
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
                       step >= stepItem.number 
                         ? 'bg-blue-600 text-white shadow-lg' 
                         : 'bg-white text-gray-400 border-2 border-gray-200 shadow-sm'
                     }`}>
                       {step > stepItem.number ? (
-                        <CheckCircleIcon className="h-6 w-6" />
+                        <CheckCircleIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                       ) : (
-                        <stepItem.icon className="h-6 w-6" />
+                        <stepItem.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                       )}
                     </div>
-                    <span className={`mt-2 text-sm font-medium transition-colors duration-300 ${
+                    <span className={`mt-2 text-xs sm:text-sm font-medium transition-colors duration-300 text-center ${
                       step >= stepItem.number ? 'text-blue-600' : 'text-gray-400'
                     }`}>
                       {stepItem.label}
                     </span>
                   </div>
                   {index < 2 && (
-                    <div className={`w-20 h-0.5 mx-4 transition-all duration-300 ${
+                    <div className={`w-12 sm:w-20 h-0.5 mx-2 sm:mx-4 transition-all duration-300 flex-shrink-0 ${
                       step > stepItem.number ? 'bg-blue-600' : 'bg-gray-200'
                     }`} />
                   )}
@@ -373,20 +373,20 @@ export default function UploadPage() {
             <form onSubmit={handleSubmit}>
               {/* Step 1: Organization Details */}
               {step === 1 && (
-                <div className="p-8 animate-fade-in-up">
-                  <div className="flex items-center mb-8">
-                    <BuildingOfficeIcon className="h-8 w-8 text-blue-600 mr-3" />
-                    <h2 className="text-2xl font-bold text-gray-900">Organization Information</h2>
+                <div className="p-4 sm:p-6 lg:p-8 animate-fade-in-up">
+                  <div className="flex items-center mb-6 sm:mb-8">
+                    <BuildingOfficeIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-3" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Organization Information</h2>
                   </div>
                   
                   {/* Source Type Selection */}
-                  <div className="mb-8">
+                  <div className="mb-6 sm:mb-8">
                     <label className="form-label">Assessment Type</label>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {(['internal', 'external'] as const).map((type) => (
                         <label
                           key={type}
-                          className={`relative flex items-center p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
+                          className={`relative flex items-center p-4 sm:p-6 rounded-xl border-2 cursor-pointer transition-all duration-200 ${
                             formData.sourceType === type
                               ? 'border-blue-500 bg-blue-50 shadow-md'
                               : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
@@ -506,13 +506,13 @@ export default function UploadPage() {
 
               {/* Step 2: Assessment Details */}
               {step === 2 && (
-                <div className="p-8 animate-fade-in-up">
-                  <div className="flex items-center mb-8">
-                    <UserGroupIcon className="h-8 w-8 text-blue-600 mr-3" />
-                    <h2 className="text-2xl font-bold text-gray-900">Assessment Information</h2>
+                <div className="p-4 sm:p-6 lg:p-8 animate-fade-in-up">
+                  <div className="flex items-center mb-6 sm:mb-8">
+                    <UserGroupIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-3" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Assessment Information</h2>
                   </div>
                   
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8">
                     <div>
                       <label className="form-label">Assessee</label>
                       <input
@@ -655,14 +655,14 @@ export default function UploadPage() {
 
               {/* Step 3: File Upload */}
               {step === 3 && (
-                <div className="p-8 animate-fade-in-up">
-                  <div className="flex items-center mb-8">
-                    <CloudArrowUpIcon className="h-8 w-8 text-blue-600 mr-3" />
-                    <h2 className="text-2xl font-bold text-gray-900">Upload Scan Data</h2>
+                <div className="p-4 sm:p-6 lg:p-8 animate-fade-in-up">
+                  <div className="flex items-center mb-6 sm:mb-8">
+                    <CloudArrowUpIcon className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600 mr-3" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Upload Scan Data</h2>
                   </div>
                   
                   <div
-                    className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 ${
+                    className={`relative border-2 border-dashed rounded-2xl p-6 sm:p-8 lg:p-12 text-center transition-all duration-300 ${
                       dragActive
                         ? 'border-blue-500 bg-blue-50'
                         : formData.csvFile
@@ -681,23 +681,23 @@ export default function UploadPage() {
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     />
                     
-                    <div className="space-y-6">
-                      <div className={`text-5xl transition-transform duration-300 ${
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className={`transition-transform duration-300 ${
                         dragActive ? 'scale-110' : ''
                       }`}>
                         {formData.csvFile ? (
-                          <CheckCircleIconSolid className="h-16 w-16 text-green-500 mx-auto" />
+                          <CheckCircleIconSolid className="h-12 w-12 sm:h-16 sm:w-16 text-green-500 mx-auto" />
                         ) : (
-                          <CloudArrowUpIconSolid className="h-16 w-16 text-gray-400 mx-auto" />
+                          <CloudArrowUpIconSolid className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto" />
                         )}
                       </div>
                       
                       {formData.csvFile ? (
                         <div className="space-y-2">
-                          <p className="text-xl font-semibold text-green-700">
+                          <p className="text-lg sm:text-xl font-semibold text-green-700 break-all">
                             {formData.csvFile.name}
                           </p>
-                          <p className="text-green-600">
+                          <p className="text-sm sm:text-base text-green-600">
                             {(formData.csvFile.size / 1024 / 1024).toFixed(2)} MB
                           </p>
                           <button
@@ -711,10 +711,10 @@ export default function UploadPage() {
                         </div>
                       ) : (
                         <div className="space-y-2">
-                          <p className="text-xl font-semibold text-gray-700">
+                          <p className="text-lg sm:text-xl font-semibold text-gray-700">
                             Drop your CSV file here, or click to browse
                           </p>
-                          <p className="text-gray-500">
+                          <p className="text-sm sm:text-base text-gray-500">
                             Supports CSV files from Nessus exports (max 50MB)
                           </p>
                         </div>
@@ -775,12 +775,12 @@ export default function UploadPage() {
               )}
 
               {/* Navigation Buttons */}
-              <div className="px-8 py-6 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+              <div className="px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-center gap-4 sm:gap-0">
                 <button
                   type="button"
                   onClick={prevStep}
                   disabled={step === 1}
-                  className={`inline-flex items-center px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 rounded-xl font-medium transition-all duration-200 w-full sm:w-auto ${
                     step === 1 
                       ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
                       : 'btn-secondary'
@@ -790,7 +790,7 @@ export default function UploadPage() {
                   Previous
                 </button>
 
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-gray-500 order-first sm:order-none">
                   Step {step} of 3
                 </div>
 
@@ -798,16 +798,17 @@ export default function UploadPage() {
                   <button
                     type="button"
                     onClick={nextStep}
-                    className="btn-primary"
+                    className="btn-primary w-full sm:w-auto"
                   >
-                    Next Step
+                    <span className="sm:hidden">Continue</span>
+                    <span className="hidden sm:inline">Next Step</span>
                     <ArrowRightIcon className="h-4 w-4 ml-2" />
                   </button>
                 ) : (
                   <button
                     type="submit"
                     disabled={loading || uploadSuccess}
-                    className={`inline-flex items-center px-8 py-3 rounded-xl font-semibold transition-all duration-200 ${
+                    className={`inline-flex items-center justify-center px-6 sm:px-8 py-2 sm:py-3 rounded-xl font-semibold transition-all duration-200 w-full sm:w-auto ${
                       loading || uploadSuccess
                         ? 'bg-gray-400 text-white cursor-not-allowed'
                         : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 shadow-lg hover:shadow-xl transform hover:scale-105'

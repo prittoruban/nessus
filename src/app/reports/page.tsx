@@ -4,6 +4,20 @@ import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
+import { 
+  MagnifyingGlassIcon,
+  AdjustmentsHorizontalIcon,
+  DocumentArrowDownIcon,
+  EyeIcon,
+  FunnelIcon,
+  CalendarIcon,
+  ChartBarIcon,
+  ExclamationTriangleIcon,
+  ShieldCheckIcon,
+  XMarkIcon,
+  ArrowUpIcon,
+  ArrowDownIcon
+} from '@heroicons/react/24/outline'
 
 interface Report {
   id: string
@@ -251,21 +265,58 @@ export default function ReportsPage() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 p-8">
+        <div className="min-h-screen bg-gray-50 p-4 sm:p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            <div className="animate-pulse space-y-6">
-              <div className="h-8 bg-slate-200 rounded w-1/3"></div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-white rounded-xl p-6 shadow-lg">
-                    <div className="space-y-3">
-                      <div className="h-4 bg-slate-200 rounded w-3/4"></div>
-                      <div className="h-3 bg-slate-200 rounded w-1/2"></div>
-                      <div className="h-3 bg-slate-200 rounded w-2/3"></div>
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-6 shadow-lg shadow-blue-500/25 animate-pulse">
+                <ChartBarIcon className="w-8 h-8 text-white" />
+              </div>
+              <div className="h-10 bg-gray-200 rounded-lg w-1/2 mx-auto mb-4 animate-pulse"></div>
+              <div className="h-6 bg-gray-200 rounded-lg w-1/3 mx-auto animate-pulse"></div>
+            </div>
+            
+            <div className="professional-card mb-8 animate-pulse">
+              <div className="flex flex-col xl:flex-row gap-6">
+                <div className="flex-1 h-12 bg-gray-200 rounded-lg"></div>
+                <div className="flex gap-4">
+                  <div className="h-12 w-32 bg-gray-200 rounded-lg"></div>
+                  <div className="h-12 w-32 bg-gray-200 rounded-lg"></div>
+                  <div className="h-12 w-24 bg-gray-200 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, i) => (
+                <div key={i} className="professional-card animate-pulse">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1 space-y-2">
+                        <div className="h-6 bg-gray-200 rounded w-3/4"></div>
+                        <div className="flex gap-2">
+                          <div className="h-5 w-16 bg-gray-200 rounded-full"></div>
+                          <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+                        </div>
+                      </div>
+                      <div className="w-10 h-10 bg-gray-200 rounded-lg"></div>
+                    </div>
+                    <div className="h-16 bg-gray-100 rounded-lg"></div>
+                    <div className="grid grid-cols-4 gap-2">
+                      {[...Array(4)].map((_, j) => (
+                        <div key={j} className="h-12 bg-gray-100 rounded-lg"></div>
+                      ))}
+                    </div>
+                    <div className="h-8 bg-gray-100 rounded-lg"></div>
+                    <div className="flex justify-between items-center pt-2">
+                      <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                      <div className="flex gap-2">
+                        <div className="h-6 w-12 bg-gray-200 rounded"></div>
+                        <div className="h-6 w-14 bg-gray-200 rounded"></div>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
@@ -276,14 +327,16 @@ export default function ReportsPage() {
   if (error) {
     return (
       <AppLayout>
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center">
-          <div className="text-center bg-white rounded-2xl p-8 shadow-xl border border-red-200">
-            <div className="text-6xl mb-4">⚠️</div>
-            <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Reports</h2>
-            <p className="text-slate-600 mb-6">{error}</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+          <div className="professional-card text-center max-w-md mx-auto">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-6">
+              <ExclamationTriangleIcon className="w-8 h-8 text-red-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Error Loading Reports</h2>
+            <p className="text-gray-600 mb-8">{error}</p>
             <button
               onClick={fetchReports}
-              className="px-6 py-3 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors duration-300"
+              className="professional-btn-primary w-full"
             >
               Try Again
             </button>
@@ -295,52 +348,50 @@ export default function ReportsPage() {
 
   return (
     <AppLayout>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          {/* Header */}
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {/* Page Header */}
           <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-r from-slate-600 to-slate-700 rounded-xl mb-6 shadow-lg">
-              <span className="text-white text-lg font-bold">□</span>
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-6 shadow-lg shadow-blue-500/25">
+              <ChartBarIcon className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-4 tracking-tight">
+            <h1 className="text-3xl font-bold text-gray-900 mb-4">
               Vulnerability Assessment Reports
             </h1>
-            <p className="text-base text-slate-600 max-w-2xl mx-auto leading-relaxed">
-              Manage and view all your vulnerability assessment reports with advanced filtering, search capabilities, and professional export options.
+            <p className="text-base text-gray-600 max-w-2xl mx-auto">
+              Manage and analyze your vulnerability assessment reports with advanced filtering, search capabilities, and professional export options.
             </p>
           </div>
 
           {/* Search and Quick Filters */}
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 mb-8">
-            <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
+          <div className="professional-card mb-8">
+            <div className="flex flex-col xl:flex-row gap-6">
               {/* Search */}
-              <div className="relative flex-1 max-w-lg">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span className="text-slate-400 text-lg">⌕</span>
-                </div>
+              <div className="relative flex-1">
+                <MagnifyingGlassIcon className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search organizations, assessees, or assessors..."
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
-                  className="w-full pl-12 pr-12 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-slate-900 placeholder-slate-500"
+                  className="professional-input pl-12 pr-12"
                 />
                 {filters.search && (
                   <button
                     onClick={() => updateFilter('search', '')}
-                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors duration-200"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <span className="text-lg">×</span>
+                    <XMarkIcon className="w-4 h-4" />
                   </button>
                 )}
               </div>
 
               {/* Quick Filters */}
-              <div className="flex items-center space-x-4">
+              <div className="flex flex-wrap items-center gap-4">
                 <select
                   value={filters.sourceType}
                   onChange={(e) => updateFilter('sourceType', e.target.value)}
-                  className="px-5 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white text-slate-700 font-medium"
+                  className="professional-select min-w-[180px]"
                 >
                   <option value="all">All Assessment Types</option>
                   <option value="internal">Internal Assessments</option>
@@ -350,7 +401,7 @@ export default function ReportsPage() {
                 <select
                   value={filters.status}
                   onChange={(e) => updateFilter('status', e.target.value)}
-                  className="px-5 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white text-slate-700 font-medium"
+                  className="professional-select min-w-[160px]"
                 >
                   <option value="all">All Statuses</option>
                   <option value="completed">Completed Reports</option>
@@ -360,28 +411,26 @@ export default function ReportsPage() {
 
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`px-6 py-3 rounded-xl transition-all duration-300 font-semibold ${
-                    showFilters 
-                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' 
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
+                  className={`professional-btn-secondary flex items-center gap-2 ${
+                    showFilters ? 'bg-blue-50 text-blue-700 border-blue-200' : ''
                   }`}
                 >
-                  <span className="mr-2">⚙</span>
-                  Advanced Filters
+                  <AdjustmentsHorizontalIcon className="w-4 h-4" />
+                  <span className="hidden sm:inline">Advanced</span>
                 </button>
               </div>
             </div>
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="mt-6 pt-6 border-t border-slate-200 animate-in slide-in-from-top-5 duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Sort By</label>
+              <div className="mt-6 pt-6 border-t border-gray-200 animate-in slide-in-from-top-5 duration-300">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Sort By</label>
                     <select
                       value={filters.sortBy}
                       onChange={(e) => updateFilter('sortBy', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="professional-select"
                     >
                       <option value="date">Date Created</option>
                       <option value="name">Organization Name</option>
@@ -390,60 +439,71 @@ export default function ReportsPage() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Sort Order</label>
-                    <select
-                      value={filters.sortOrder}
-                      onChange={(e) => updateFilter('sortOrder', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="desc">Descending</option>
-                      <option value="asc">Ascending</option>
-                    </select>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Sort Order</label>
+                    <div className="relative">
+                      <select
+                        value={filters.sortOrder}
+                        onChange={(e) => updateFilter('sortOrder', e.target.value)}
+                        className="professional-select pr-10"
+                      >
+                        <option value="desc">Newest First</option>
+                        <option value="asc">Oldest First</option>
+                      </select>
+                      {filters.sortOrder === 'desc' ? (
+                        <ArrowDownIcon className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      ) : (
+                        <ArrowUpIcon className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                      )}
+                    </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">Date Range</label>
-                    <select
-                      value={filters.dateRange}
-                      onChange={(e) => updateFilter('dateRange', e.target.value)}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="all">All Time</option>
-                      <option value="7days">Last 7 Days</option>
-                      <option value="30days">Last 30 Days</option>
-                      <option value="90days">Last 90 Days</option>
-                      <option value="custom">Custom Range</option>
-                    </select>
+                  <div className="space-y-2">
+                    <label className="block text-sm font-semibold text-gray-700">Date Range</label>
+                    <div className="relative">
+                      <select
+                        value={filters.dateRange}
+                        onChange={(e) => updateFilter('dateRange', e.target.value)}
+                        className="professional-select pr-10"
+                      >
+                        <option value="all">All Time</option>
+                        <option value="7days">Last 7 Days</option>
+                        <option value="30days">Last 30 Days</option>
+                        <option value="90days">Last 90 Days</option>
+                        <option value="custom">Custom Range</option>
+                      </select>
+                      <CalendarIcon className="absolute right-8 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                    </div>
                   </div>
 
                   <div className="flex items-end">
                     <button
                       onClick={clearFilters}
-                      className="w-full px-4 py-2 bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 transition-all duration-300"
+                      className="professional-btn-secondary w-full"
                     >
-                      Clear Filters
+                      <XMarkIcon className="w-4 h-4 mr-2" />
+                      Clear All
                     </button>
                   </div>
 
                   {filters.dateRange === 'custom' && (
                     <>
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">Start Date</label>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">Start Date</label>
                         <input
                           type="date"
                           value={filters.customStartDate}
                           onChange={(e) => updateFilter('customStartDate', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="professional-input"
                         />
                       </div>
-                      <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-2">End Date</label>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">End Date</label>
                         <input
                           type="date"
                           value={filters.customEndDate}
                           onChange={(e) => updateFilter('customEndDate', e.target.value)}
-                          className="w-full px-3 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                          className="professional-input"
                         />
                       </div>
                     </>
@@ -454,14 +514,22 @@ export default function ReportsPage() {
           </div>
 
           {/* Results Summary */}
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-slate-600">
-              Showing <span className="font-semibold">{filteredReports.length}</span> of <span className="font-semibold">{reports.length}</span> reports
-            </p>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+            <div className="flex items-center gap-4">
+              <p className="text-gray-600">
+                Showing <span className="font-semibold text-gray-900">{filteredReports.length}</span> of <span className="font-semibold text-gray-900">{reports.length}</span> reports
+              </p>
+              {filteredReports.length !== reports.length && (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  <FunnelIcon className="w-3 h-3 mr-1" />
+                  Filtered
+                </span>
+              )}
+            </div>
             {(filters.search || filters.sourceType !== 'all' || filters.status !== 'all' || filters.dateRange !== 'all') && (
               <button
                 onClick={clearFilters}
-                className="text-sm text-blue-600 hover:text-blue-700 underline"
+                className="text-sm text-blue-600 hover:text-blue-700 underline font-medium"
               >
                 Clear all filters
               </button>
@@ -470,134 +538,151 @@ export default function ReportsPage() {
 
           {/* Reports Grid */}
           {filteredReports.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="text-4xl mb-4 text-slate-400">□</div>
-              <h3 className="text-xl font-semibold text-slate-700 mb-2">No reports found</h3>
-              <p className="text-slate-500 mb-6">
+            <div className="professional-card text-center py-16">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-full mb-6">
+                <ShieldCheckIcon className="w-10 h-10 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No reports found</h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
                 {filters.search || filters.sourceType !== 'all' || filters.status !== 'all' 
-                  ? 'Try adjusting your filters to see more results.'
-                  : 'Upload your first vulnerability scan to get started.'}
+                  ? 'Try adjusting your filters to see more results, or upload new vulnerability scans to get started.'
+                  : 'Upload your first vulnerability scan to create professional assessment reports.'}
               </p>
               <button
                 onClick={() => window.location.href = '/upload'}
-                className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors duration-300"
+                className="professional-btn-primary inline-flex items-center gap-2"
               >
+                <DocumentArrowDownIcon className="w-5 h-5" />
                 Upload First Scan
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredReports.map((report, index) => (
                 <div
                   key={report.id}
                   onClick={() => handleViewReport(report.id)}
-                  className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
+                  className="group bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-xl cursor-pointer hover:-translate-y-1 transition-all duration-300 p-6"
                   style={{
-                    animationDelay: `${index * 100}ms`
+                    animationDelay: `${index * 50}ms`
                   }}
                 >
                   {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-slate-900 truncate mb-1">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="flex-1 min-w-0 pr-4">
+                      <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate mb-3 group-hover:text-blue-600 transition-colors">
                         {report.org_name}
                       </h3>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold border ${
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
                           report.source_type === 'internal' 
-                            ? 'bg-blue-100 text-blue-800 border-blue-200' 
-                            : 'bg-purple-100 text-purple-800 border-purple-200'
+                            ? 'bg-blue-100 text-blue-800' 
+                            : 'bg-purple-100 text-purple-800'
                         }`}>
                           {report.source_type === 'internal' ? 'Internal' : 'External'}
                         </span>
-                        <span className={`px-2 py-1 rounded text-xs font-semibold border ${getStatusColor(report.status)}`}>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(report.status)}`}>
                           {report.status}
                         </span>
                       </div>
                     </div>
-                    <div className="text-xl text-slate-400">□</div>
+                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center group-hover:from-blue-600 group-hover:to-blue-700 transition-all shadow-sm">
+                      <ChartBarIcon className="w-6 h-6 text-white" />
+                    </div>
                   </div>
 
                   {/* Iteration Info */}
-                  <div className="mb-4 p-3 bg-slate-50 rounded-xl">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-slate-600">Iteration #{report.iteration_number}</span>
-                      <span className="text-slate-500">
-                        {new Date(report.scan_start_date).toLocaleDateString()} - {new Date(report.scan_end_date).toLocaleDateString()}
-                      </span>
+                  <div className="mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                    <div className="flex items-center justify-between text-sm mb-3">
+                      <span className="font-semibold text-gray-700">Iteration #{report.iteration_number}</span>
+                      <div className="flex items-center text-gray-500">
+                        <CalendarIcon className="w-4 h-4 mr-1.5" />
+                        <span className="text-xs">
+                          {new Date(report.scan_start_date).toLocaleDateString()} - {new Date(report.scan_end_date).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                    <div className="mt-2 text-sm text-slate-600">
-                      <span className="font-medium">Test performed at:</span> {report.test_performed_at}
+                    <div className="text-sm text-gray-600">
+                      <span className="font-medium">Test Location:</span> 
+                      <span className="ml-1">{report.test_performed_at}</span>
                     </div>
                   </div>
 
-                  {/* Vulnerability Counts */}
-                  <div className="space-y-3 mb-4">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-slate-700">Total Vulnerabilities</span>
-                      <span className="text-lg font-bold text-slate-900">{report.total_vulnerabilities}</span>
+                  {/* Vulnerability Summary */}
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-semibold text-gray-700">Total Vulnerabilities</span>
+                      <span className="text-xl sm:text-2xl font-bold text-gray-900">{report.total_vulnerabilities}</span>
                     </div>
                     
-                    <div className="grid grid-cols-4 gap-2 text-center">
-                      <div className="p-2 bg-red-50 rounded-lg">
-                        <div className={`text-lg font-bold ${getSeverityColor(report.critical_count, 'critical')}`}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                      <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-red-50 to-red-100 rounded-xl border border-red-200">
+                        <div className={`text-base sm:text-lg font-bold mb-1 ${getSeverityColor(report.critical_count, 'critical')}`}>
                           {report.critical_count}
                         </div>
-                        <div className="text-xs text-slate-600">Critical</div>
+                        <div className="text-xs font-medium text-red-700">Critical</div>
                       </div>
-                      <div className="p-2 bg-orange-50 rounded-lg">
-                        <div className={`text-lg font-bold ${getSeverityColor(report.high_count, 'high')}`}>
+                      <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl border border-orange-200">
+                        <div className={`text-base sm:text-lg font-bold mb-1 ${getSeverityColor(report.high_count, 'high')}`}>
                           {report.high_count}
                         </div>
-                        <div className="text-xs text-slate-600">High</div>
+                        <div className="text-xs font-medium text-orange-700">High</div>
                       </div>
-                      <div className="p-2 bg-yellow-50 rounded-lg">
-                        <div className={`text-lg font-bold ${getSeverityColor(report.medium_count, 'medium')}`}>
+                      <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl border border-yellow-200">
+                        <div className={`text-base sm:text-lg font-bold mb-1 ${getSeverityColor(report.medium_count, 'medium')}`}>
                           {report.medium_count}
                         </div>
-                        <div className="text-xs text-slate-600">Medium</div>
+                        <div className="text-xs font-medium text-yellow-700">Medium</div>
                       </div>
-                      <div className="p-2 bg-blue-50 rounded-lg">
-                        <div className={`text-lg font-bold ${getSeverityColor(report.low_count, 'low')}`}>
+                      <div className="text-center p-2 sm:p-3 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl border border-blue-200">
+                        <div className={`text-base sm:text-lg font-bold mb-1 ${getSeverityColor(report.low_count, 'low')}`}>
                           {report.low_count}
                         </div>
-                        <div className="text-xs text-slate-600">Low</div>
+                        <div className="text-xs font-medium text-blue-700">Low</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Team Info */}
                   {(report.assessee || report.assessor) && (
-                    <div className="text-sm text-slate-600 space-y-1 mb-4">
+                    <div className="text-sm text-gray-600 space-y-2 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
                       {report.assessee && (
-                        <div>Assessee: <span className="font-medium">{report.assessee}</span></div>
+                        <div className="flex items-center">
+                          <span className="font-medium text-gray-700 w-20 flex-shrink-0">Assessee:</span>
+                          <span className="ml-2 truncate">{report.assessee}</span>
+                        </div>
                       )}
                       {report.assessor && (
-                        <div>Assessor: <span className="font-medium">{report.assessor}</span></div>
+                        <div className="flex items-center">
+                          <span className="font-medium text-gray-700 w-20 flex-shrink-0">Assessor:</span>
+                          <span className="ml-2 truncate">{report.assessor}</span>
+                        </div>
                       )}
                     </div>
                   )}
 
                   {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-slate-100">
-                    <span className="text-xs text-slate-500">
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                    <span className="text-xs text-gray-500">
                       Created {new Date(report.created_at).toLocaleDateString()}
                     </span>
-                    <div className="flex space-x-2">
+                    <div className="flex items-center gap-3">
                       <button 
                         onClick={(e) => {
                           e.stopPropagation()
                           handleViewReport(report.id)
                         }}
-                        className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:text-blue-700 transition-colors"
                       >
+                        <EyeIcon className="w-4 h-4" />
                         View
                       </button>
                       <button 
                         onClick={(e) => handleExportReport(report.id, e)}
                         disabled={exporting === report.id}
-                        className="text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors duration-200 disabled:opacity-50"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-gray-700 transition-colors disabled:opacity-50"
                       >
+                        <DocumentArrowDownIcon className="w-4 h-4" />
                         {exporting === report.id ? 'Exporting...' : 'Export'}
                       </button>
                     </div>
