@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 
@@ -35,10 +36,12 @@ interface Filters {
 }
 
 export default function ReportsPage() {
+  const router = useRouter()
   const [reports, setReports] = useState<Report[]>([])
   const [filteredReports, setFilteredReports] = useState<Report[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [exporting, setExporting] = useState<string | null>(null)
   const [filters, setFilters] = useState<Filters>({
     search: '',
     sourceType: 'all',
@@ -206,6 +209,44 @@ export default function ReportsPage() {
     }
   }
 
+  const handleViewReport = (reportId: string) => {
+    router.push(`/reports/${reportId}`)
+  }
+
+  const handleExportReport = async (reportId: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    
+    try {
+      setExporting(reportId)
+      
+      // Create a link to download the PDF
+      const response = await fetch(`/api/pdf/generate/${reportId}`)
+      
+      if (!response.ok) {
+        throw new Error('Failed to generate PDF')
+      }
+      
+      // Get the blob
+      const blob = await response.blob()
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `vulnerability-report-${reportId}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+      
+    } catch (error) {
+      console.error('Export failed:', error)
+      alert('Failed to export report. Please try again.')
+    } finally {
+      setExporting(null)
+    }
+  }
+
   if (loading) {
     return (
       <AppLayout>
@@ -257,20 +298,23 @@ export default function ReportsPage() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-slate-600 to-slate-700 rounded-2xl mb-6 shadow-lg">
+              <span className="text-white text-3xl">📋</span>
+            </div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
               Vulnerability Assessment Reports
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Manage and view all your vulnerability assessment reports with advanced filtering and search capabilities.
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              Manage and view all your vulnerability assessment reports with advanced filtering, search capabilities, and professional export options.
             </p>
           </div>
 
           {/* Search and Quick Filters */}
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-6 mb-8">
-            <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 mb-8">
+            <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
               {/* Search */}
-              <div className="relative flex-1 max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <div className="relative flex-1 max-w-lg">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <span className="text-slate-400 text-xl">🔍</span>
                 </div>
                 <input
@@ -278,14 +322,14 @@ export default function ReportsPage() {
                   placeholder="Search organizations, assessees, or assessors..."
                   value={filters.search}
                   onChange={(e) => updateFilter('search', e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="w-full pl-14 pr-12 py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-slate-900 placeholder-slate-500"
                 />
                 {filters.search && (
                   <button
                     onClick={() => updateFilter('search', '')}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors duration-200"
                   >
-                    ✕
+                    <span className="text-lg">✕</span>
                   </button>
                 )}
               </div>
@@ -295,33 +339,34 @@ export default function ReportsPage() {
                 <select
                   value={filters.sourceType}
                   onChange={(e) => updateFilter('sourceType', e.target.value)}
-                  className="px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="px-5 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white text-slate-700 font-medium"
                 >
-                  <option value="all">All Types</option>
-                  <option value="internal">Internal</option>
-                  <option value="external">External</option>
+                  <option value="all">All Assessment Types</option>
+                  <option value="internal">Internal Assessments</option>
+                  <option value="external">External Assessments</option>
                 </select>
 
                 <select
                   value={filters.status}
                   onChange={(e) => updateFilter('status', e.target.value)}
-                  className="px-4 py-2 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  className="px-5 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 bg-white text-slate-700 font-medium"
                 >
-                  <option value="all">All Status</option>
-                  <option value="completed">Completed</option>
-                  <option value="pending">Pending</option>
-                  <option value="draft">Draft</option>
+                  <option value="all">All Statuses</option>
+                  <option value="completed">Completed Reports</option>
+                  <option value="pending">Pending Review</option>
+                  <option value="draft">Draft Reports</option>
                 </select>
 
                 <button
                   onClick={() => setShowFilters(!showFilters)}
-                  className={`px-4 py-2 rounded-xl transition-all duration-300 ${
+                  className={`px-6 py-3 rounded-xl transition-all duration-300 font-semibold ${
                     showFilters 
-                      ? 'bg-blue-500 text-white' 
-                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                      ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30' 
+                      : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-300'
                   }`}
                 >
-                  🔧 Filters
+                  <span className="mr-2">🔧</span>
+                  Advanced Filters
                 </button>
               </div>
             </div>
@@ -444,6 +489,7 @@ export default function ReportsPage() {
               {filteredReports.map((report, index) => (
                 <div
                   key={report.id}
+                  onClick={() => handleViewReport(report.id)}
                   className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6 hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02] cursor-pointer"
                   style={{
                     animationDelay: `${index * 100}ms`
@@ -534,11 +580,21 @@ export default function ReportsPage() {
                       Created {new Date(report.created_at).toLocaleDateString()}
                     </span>
                     <div className="flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleViewReport(report.id)
+                        }}
+                        className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
+                      >
                         View
                       </button>
-                      <button className="text-slate-600 hover:text-slate-700 text-sm font-medium">
-                        Export
+                      <button 
+                        onClick={(e) => handleExportReport(report.id, e)}
+                        disabled={exporting === report.id}
+                        className="text-slate-600 hover:text-slate-700 text-sm font-medium transition-colors duration-200 disabled:opacity-50"
+                      >
+                        {exporting === report.id ? 'Exporting...' : 'Export'}
                       </button>
                     </div>
                   </div>

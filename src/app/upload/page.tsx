@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import AppLayout from '@/components/AppLayout'
 
@@ -37,6 +38,7 @@ type PreviousReport = {
 }
 
 export default function UploadPage() {
+  const router = useRouter()
   const [formData, setFormData] = useState<UploadFormData>({
     sourceType: 'internal',
     organizationId: '',
@@ -211,9 +213,6 @@ export default function UploadPage() {
         formDataToSend.append('csvFile', formData.csvFile)
       }
 
-      console.log('Uploading with data:', formDataJson)
-      console.log('CSV file:', formData.csvFile?.name, formData.csvFile?.size)
-
       // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -248,7 +247,7 @@ export default function UploadPage() {
       // Show success state
       setUploadSuccess(true)
       
-      // Show success message and reset form
+      // Show success message and redirect to reports
       setTimeout(() => {
         setUploadProgress(0)
         setUploadSuccess(false)
@@ -266,8 +265,8 @@ export default function UploadPage() {
           csvFile: null,
         })
         setErrors({})
-        // Optionally redirect to reports page
-        // window.location.href = '/reports'
+        // Redirect to reports page
+        router.push('/reports')
       }, 3000)
 
     } catch (error) {
@@ -298,11 +297,14 @@ export default function UploadPage() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-slate-900 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+              <span className="text-white text-3xl">📤</span>
+            </div>
+            <h1 className="text-4xl font-bold text-slate-900 mb-4 tracking-tight">
               Upload Vulnerability Scan
             </h1>
-            <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-              Upload your Nessus CSV scan results with comprehensive metadata for professional vulnerability assessment reporting.
+            <p className="text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+              Upload your Nessus CSV scan results with comprehensive metadata for professional vulnerability assessment reporting and analysis.
             </p>
           </div>
 
@@ -311,29 +313,29 @@ export default function UploadPage() {
             <div className="flex items-center justify-center space-x-4">
               {[1, 2, 3].map((stepNumber) => (
                 <div key={stepNumber} className="flex items-center">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                  <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300 shadow-lg ${
                     step >= stepNumber 
-                      ? 'bg-blue-500 text-white shadow-lg shadow-blue-500/30' 
-                      : 'bg-white text-slate-400 border-2 border-slate-200'
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-blue-500/30 scale-110' 
+                      : 'bg-white text-slate-400 border-2 border-slate-200 shadow-slate-200/50'
                   }`}>
                     {step > stepNumber ? '✓' : stepNumber}
                   </div>
                   {stepNumber < 3 && (
-                    <div className={`w-16 h-1 mx-2 rounded-full transition-all duration-300 ${
-                      step > stepNumber ? 'bg-blue-500' : 'bg-slate-200'
+                    <div className={`w-20 h-2 mx-3 rounded-full transition-all duration-300 ${
+                      step > stepNumber ? 'bg-gradient-to-r from-blue-500 to-purple-600' : 'bg-slate-200'
                     }`} />
                   )}
                 </div>
               ))}
             </div>
-            <div className="flex justify-center mt-4 space-x-24">
-              <span className={`text-sm font-medium transition-colors duration-300 ${
+            <div className="flex justify-center mt-6 space-x-28">
+              <span className={`text-sm font-semibold transition-colors duration-300 ${
                 step >= 1 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Organization</span>
-              <span className={`text-sm font-medium transition-colors duration-300 ${
+              }`}>Organization Details</span>
+              <span className={`text-sm font-semibold transition-colors duration-300 ${
                 step >= 2 ? 'text-blue-600' : 'text-slate-400'
-              }`}>Scan Details</span>
-              <span className={`text-sm font-medium transition-colors duration-300 ${
+              }`}>Scan Information</span>
+              <span className={`text-sm font-semibold transition-colors duration-300 ${
                 step >= 3 ? 'text-blue-600' : 'text-slate-400'
               }`}>File Upload</span>
             </div>
@@ -657,6 +659,7 @@ export default function UploadPage() {
                       <div className="text-6xl">✅</div>
                       <h3 className="text-xl font-semibold text-green-700">Upload Successful!</h3>
                       <p className="text-green-600">Your vulnerability scan has been processed and saved.</p>
+                      <p className="text-sm text-green-500">Redirecting to reports page...</p>
                     </div>
                   )}
 

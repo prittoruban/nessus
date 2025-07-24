@@ -20,31 +20,31 @@ const navigationItems: NavItem[] = [
     name: 'Dashboard',
     icon: '🏠',
     path: '/',
-    description: 'Overview & Home'
+    description: 'Overview & Analytics'
   },
   {
     name: 'Upload Scans',
     icon: '📤',
     path: '/upload',
-    description: 'Upload CSV scan results'
+    description: 'Import vulnerability data'
   },
   {
     name: 'Reports',
     icon: '📋',
     path: '/reports',
-    description: 'View & manage reports'
+    description: 'Manage assessments'
   },
   {
     name: 'Risk Insights',
     icon: '📊',
     path: '/insights',
-    description: 'Vulnerability analytics'
+    description: 'Vulnerability trends'
   },
   {
-    name: 'Overview',
+    name: 'Executive Summary',
     icon: '📈',
     path: '/overview',
-    description: 'Executive summaries'
+    description: 'Leadership dashboard'
   }
 ]
 
@@ -76,27 +76,27 @@ export default function Sidebar({ className = '' }: SidebarProps) {
   }
 
   return (
-    <div className={`bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white w-72 h-screen overflow-hidden shadow-2xl ${className}`}>
+    <div className={`bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white w-72 h-screen overflow-hidden shadow-2xl border-r border-slate-700/50 ${className}`}>
       {/* Header */}
-      <div className="p-6 border-b border-slate-700/50 backdrop-blur-sm">
-        <div className="flex items-center space-x-3">
+      <div className="p-6 border-b border-slate-700/50 backdrop-blur-sm bg-slate-800/30">
+        <div className="flex items-center space-x-4">
           <div className="relative">
-            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xl">🛡️</span>
+            <div className="w-14 h-14 bg-gradient-to-r from-blue-500 via-purple-500 to-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <span className="text-white font-bold text-2xl">🛡️</span>
             </div>
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse"></div>
+            <div className="absolute -top-1 -right-1 w-5 h-5 bg-green-400 rounded-full border-2 border-slate-900 animate-pulse shadow-lg shadow-green-400/50"></div>
           </div>
           <div>
-            <h1 className="text-xl font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-              Nessus Portal
+            <h1 className="text-xl font-bold bg-gradient-to-r from-white via-blue-100 to-purple-200 bg-clip-text text-transparent">
+              VA Portal
             </h1>
-            <p className="text-slate-400 text-sm">Vulnerability Assessment</p>
+            <p className="text-slate-400 text-sm font-medium">Vulnerability Assessment</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+      <nav className="p-4 space-y-3 flex-1 overflow-y-auto">
         {navigationItems.map((item, index) => {
           const isActive = isActivePath(item.path)
           
@@ -104,10 +104,10 @@ export default function Sidebar({ className = '' }: SidebarProps) {
             <Link
               key={item.name}
               href={item.path}
-              className={`group relative flex items-center space-x-4 px-4 py-3 rounded-xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] ${
+              className={`group relative flex items-center space-x-4 px-5 py-4 rounded-2xl transition-all duration-300 ease-in-out transform hover:scale-[1.02] ${
                 isActive
-                  ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white shadow-lg border border-blue-500/30'
-                  : 'text-slate-300 hover:text-white hover:bg-white/5'
+                  ? 'bg-gradient-to-r from-blue-500/20 via-purple-500/15 to-indigo-500/20 text-white shadow-lg border border-blue-500/30 backdrop-blur-sm'
+                  : 'text-slate-300 hover:text-white hover:bg-white/8 hover:backdrop-blur-sm'
               }`}
               style={{
                 animationDelay: `${index * 100}ms`
@@ -115,12 +115,12 @@ export default function Sidebar({ className = '' }: SidebarProps) {
             >
               {/* Active indicator */}
               {isActive && (
-                <div className="absolute left-0 top-0 w-1 h-full bg-gradient-to-b from-blue-400 to-purple-500 rounded-r-full"></div>
+                <div className="absolute left-0 top-0 w-1.5 h-full bg-gradient-to-b from-blue-400 via-purple-500 to-indigo-500 rounded-r-full shadow-lg shadow-blue-500/50"></div>
               )}
               
               {/* Icon */}
-              <div className={`text-2xl transition-transform duration-300 ${
-                isActive ? 'scale-110' : 'group-hover:scale-110'
+              <div className={`text-2xl transition-all duration-300 ${
+                isActive ? 'scale-110 drop-shadow-lg' : 'group-hover:scale-110'
               }`}>
                 {item.icon}
               </div>
@@ -139,24 +139,32 @@ export default function Sidebar({ className = '' }: SidebarProps) {
                 </div>
               </div>
 
-              {/* Hover effect */}
-              <div className={`w-2 h-2 rounded-full transition-all duration-300 ${
+              {/* Status indicator */}
+              <div className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
                 isActive 
-                  ? 'bg-blue-400 shadow-lg shadow-blue-400/50' 
+                  ? 'bg-gradient-to-r from-blue-400 to-purple-500 shadow-lg shadow-blue-400/50' 
                   : 'bg-transparent group-hover:bg-slate-400'
               }`}></div>
+
+              {/* Hover glow effect */}
+              {!isActive && (
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-r from-blue-500/5 to-purple-500/5"></div>
+              )}
             </Link>
           )
         })}
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-700/50 bg-slate-800/50 backdrop-blur-sm">
+      <div className="p-4 border-t border-slate-700/50 bg-slate-800/30 backdrop-blur-sm">
         <div className="flex items-center justify-between text-xs text-slate-400">
-          <span>v2.0.1</span>
-          <div className="flex items-center space-x-1">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span>Online</span>
+          <div className="flex items-center space-x-2">
+            <span className="font-medium">Portal v2.1</span>
+            <span className="px-2 py-1 bg-blue-500/20 text-blue-300 rounded-md text-xs border border-blue-500/30">Pro</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm shadow-green-400/50"></div>
+            <span className="font-medium">Secure</span>
           </div>
         </div>
       </div>

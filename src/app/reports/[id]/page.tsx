@@ -213,29 +213,37 @@ export default function ReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       {/* Header Controls */}
-      <div className="bg-gray-50 border-b p-4 print:hidden">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <button
-            onClick={() => router.push('/upload')}
-            className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-          >
-            ← Back to Upload
-          </button>
+      <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 p-6 print:hidden shadow-sm">
+        <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => router.push('/reports')}
+              className="inline-flex items-center px-5 py-3 bg-slate-600 text-white rounded-xl hover:bg-slate-700 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              <span className="mr-2">←</span>
+              Back to Reports
+            </button>
+            <div className="hidden md:block">
+              <h1 className="text-xl font-bold text-slate-900">{report.org_name}</h1>
+              <p className="text-sm text-slate-600">{report.source_type === 'internal' ? 'Internal' : 'External'} Assessment Report</p>
+            </div>
+          </div>
           <button
             onClick={downloadPDF}
             disabled={generatingPdf}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
+            className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             {generatingPdf ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent mr-3"></div>
                 Generating PDF...
               </>
             ) : (
               <>
-                📄 Download Executive Report
+                <span className="mr-3">📄</span>
+                Download Executive Report
               </>
             )}
           </button>
@@ -243,50 +251,55 @@ export default function ReportPage() {
       </div>
 
       {/* Report Content */}
-      <div className="max-w-6xl mx-auto p-8 space-y-12">
+      <div className="max-w-7xl mx-auto p-8 space-y-12">
         
         {/* SECTION 1: COVER PAGE */}
-        <section className="text-center space-y-8 pb-12 border-b-2 border-gray-200">
-          <h1 className="text-4xl font-bold text-gray-900 mb-8">
+        <section className="bg-white rounded-2xl shadow-xl border border-slate-200 p-12 text-center space-y-8">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl mb-6 shadow-lg">
+            <span className="text-white text-4xl">🛡️</span>
+          </div>
+          
+          <h1 className="text-5xl font-bold text-slate-900 mb-8 tracking-tight">
             {report.source_type === 'internal' ? 'Internal' : 'External'} Vulnerability Assessment Report
           </h1>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            <div className="space-y-4">
-              <div>
-                <span className="block text-lg font-semibold text-gray-700">Organization Name</span>
-                <span className="text-xl">{report.org_name}</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-4xl mx-auto">
+            <div className="space-y-6">
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="block text-lg font-semibold text-slate-700 mb-2">Organization Name</span>
+                <span className="text-2xl font-bold text-slate-900">{report.org_name}</span>
               </div>
-              <div>
-                <span className="block text-lg font-semibold text-gray-700">Version</span>
-                <span className="text-xl">{report.version}</span>
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="block text-lg font-semibold text-slate-700 mb-2">Report Version</span>
+                <span className="text-2xl font-bold text-slate-900">{report.version}</span>
               </div>
             </div>
-            <div className="space-y-4">
-              <div>
-                <span className="block text-lg font-semibold text-gray-700">Date Range</span>
-                <span className="text-xl">
+            <div className="space-y-6">
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="block text-lg font-semibold text-slate-700 mb-2">Assessment Period</span>
+                <span className="text-xl font-semibold text-slate-900">
                   {new Date(report.scan_start_date).toLocaleDateString()} - {new Date(report.scan_end_date).toLocaleDateString()}
                 </span>
               </div>
-              <div>
-                <span className="block text-lg font-semibold text-gray-700">Document Type</span>
-                <span className="text-xl">{report.document_type}</span>
+              <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="block text-lg font-semibold text-slate-700 mb-2">Document Type</span>
+                <span className="text-2xl font-bold text-slate-900">{report.document_type}</span>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto pt-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-6xl mx-auto pt-10">
             {[
-              { label: 'Assessee', value: report.assessee },
-              { label: 'Assessor', value: report.assessor },
-              { label: 'Reviewer', value: report.reviewer },
-              { label: 'Approved by', value: report.approver }
+              { label: 'Assessee', value: report.assessee, icon: '👤' },
+              { label: 'Assessor', value: report.assessor, icon: '🔍' },
+              { label: 'Reviewer', value: report.reviewer, icon: '📋' },
+              { label: 'Approved by', value: report.approver, icon: '✅' }
             ].map((item, index) => (
-              <div key={index} className="flex flex-col">
-                <span className="font-semibold text-gray-700 mb-2">{item.label}</span>
-                <div className="border-b-2 border-gray-300 pb-1 min-h-[2rem]">
-                  <span className="text-lg">{item.value}</span>
+              <div key={index} className="p-6 bg-white rounded-xl border border-slate-200 shadow-lg">
+                <div className="text-2xl mb-3">{item.icon}</div>
+                <span className="block font-semibold text-slate-700 mb-3">{item.label}</span>
+                <div className="border-b-2 border-slate-300 pb-2 min-h-[2.5rem]">
+                  <span className="text-lg font-medium text-slate-900">{item.value}</span>
                 </div>
               </div>
             ))}

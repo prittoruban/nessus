@@ -1,52 +1,52 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { createServerSupabase } from '@/lib/supabase-server'
-import puppeteer from 'puppeteer'
+import { NextRequest, NextResponse } from "next/server";
+import { createServerSupabase } from "@/lib/supabase-server";
+import puppeteer from "puppeteer";
 
 // Types
 interface ReportData {
-  id: string
-  org_name: string
-  source_type: string
-  scan_start_date: string
-  scan_end_date: string
-  version: string
-  document_type: string
-  assessee: string | null
-  assessor: string | null
-  reviewer: string | null
-  approver: string | null
-  total_ips_tested: number
-  total_vulnerabilities: number
-  critical_count: number
-  high_count: number
-  medium_count: number
-  low_count: number
-  info_count: number
-  zero_day_count: number
+  id: string;
+  org_name: string;
+  source_type: string;
+  scan_start_date: string;
+  scan_end_date: string;
+  version: string;
+  document_type: string;
+  assessee: string | null;
+  assessor: string | null;
+  reviewer: string | null;
+  approver: string | null;
+  total_ips_tested: number;
+  total_vulnerabilities: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  info_count: number;
+  zero_day_count: number;
 }
 
 interface HostData {
-  id: string
-  ip_address: string
-  hostname: string | null
-  scan_status: string
-  critical_count: number
-  high_count: number
-  medium_count: number
-  low_count: number
-  info_count: number
-  total_vulnerabilities: number
+  id: string;
+  ip_address: string;
+  hostname: string | null;
+  scan_status: string;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  info_count: number;
+  total_vulnerabilities: number;
 }
 
 interface VulnerabilityData {
-  id: string
-  cve_id: string | null
-  vulnerability_name: string
-  severity: string
-  host_ip: string
-  fix_recommendation: string | null
-  solution: string | null
-  is_zero_day: boolean
+  id: string;
+  cve_id: string | null;
+  vulnerability_name: string;
+  severity: string;
+  host_ip: string;
+  fix_recommendation: string | null;
+  solution: string | null;
+  is_zero_day: boolean;
 }
 
 export async function GET(
@@ -54,59 +54,61 @@ export async function GET(
   { params }: { params: Promise<{ reportId: string }> }
 ) {
   try {
-    const { reportId } = await params
-    const supabase = createServerSupabase()
+    const { reportId } = await params;
+    const supabase = createServerSupabase();
 
     // Fetch report data
     const { data: report, error: reportError } = await supabase
-      .from('reports')
-      .select('*')
-      .eq('id', reportId)
-      .single()
+      .from("reports")
+      .select("*")
+      .eq("id", reportId)
+      .single();
 
     if (reportError || !report) {
-      return NextResponse.json(
-        { error: 'Report not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: "Report not found" }, { status: 404 });
     }
 
     // Fetch hosts
     const { data: hosts } = await supabase
-      .from('report_hosts')
-      .select('*')
-      .eq('report_id', reportId)
-      .order('ip_address')
+      .from("report_hosts")
+      .select("*")
+      .eq("report_id", reportId)
+      .order("ip_address");
 
     // Fetch vulnerabilities
     const { data: vulnerabilities } = await supabase
-      .from('vulnerabilities')
-      .select('*')
-      .eq('report_id', reportId)
-      .order('severity', { ascending: false })
-      .order('host_ip')
+      .from("vulnerabilities")
+      .select("*")
+      .eq("report_id", reportId)
+      .order("severity", { ascending: false })
+      .order("host_ip");
 
-    const zeroDayVulns = vulnerabilities?.filter(v => v.is_zero_day) || []
+    const zeroDayVulns = vulnerabilities?.filter((v) => v.is_zero_day) || [];
 
     // Generate HTML content
-    const htmlContent = generateReportHTML(report, hosts || [], vulnerabilities || [], zeroDayVulns)
+    const htmlContent = generateReportHTML(
+      report,
+      hosts || [],
+      vulnerabilities || [],
+      zeroDayVulns
+    );
 
     // Launch Puppeteer and generate PDF
     const browser = await puppeteer.launch({
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox']
-    })
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    });
 
-    const page = await browser.newPage()
-    await page.setContent(htmlContent, { waitUntil: 'networkidle0' })
-    
+    const page = await browser.newPage();
+    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+
     const pdfBuffer = await page.pdf({
-      format: 'A4',
+      format: "A4",
       margin: {
-        top: '20mm',
-        right: '20mm',
-        bottom: '20mm',
-        left: '20mm'
+        top: "20mm",
+        right: "20mm",
+        bottom: "20mm",
+        left: "20mm",
       },
       printBackground: true,
       displayHeaderFooter: true,
@@ -119,63 +121,100 @@ export async function GET(
         <div style="font-size: 10px; text-align: center; width: 100%; color: #666;">
           Page <span class="pageNumber"></span> of <span class="totalPages"></span>
         </div>
-      `
-    })
+      `,
+    });
 
-    await browser.close()
+    await browser.close();
 
     // Set response headers
-    const date = new Date()
-    const month = date.toLocaleString('default', { month: 'long' })
-    const year = date.getFullYear()
-    const filename = `${report.org_name.replace(/[^a-zA-Z0-9]/g, '_')}_VA_Report_${month}_${year}.pdf`
+    const date = new Date();
+    const month = date.toLocaleString("default", { month: "long" });
+    const year = date.getFullYear();
+    const filename = `${report.org_name.replace(
+      /[^a-zA-Z0-9]/g,
+      "_"
+    )}_VA_Report_${month}_${year}.pdf`;
 
     return new NextResponse(pdfBuffer, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        'Cache-Control': 'no-cache'
-      }
-    })
-
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${filename}"`,
+        "Cache-Control": "no-cache",
+      },
+    });
   } catch (error) {
-    console.error('PDF generation error:', error)
+    console.error("PDF generation error:", error);
     return NextResponse.json(
-      { error: 'Failed to generate PDF' },
+      { error: "Failed to generate PDF" },
       { status: 500 }
-    )
+    );
   }
 }
 
-function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabilities: VulnerabilityData[], zeroDayVulns: VulnerabilityData[]): string {
+function generateReportHTML(
+  report: ReportData,
+  hosts: HostData[],
+  vulnerabilities: VulnerabilityData[],
+  zeroDayVulns: VulnerabilityData[]
+): string {
   const riskModel = [
-    { priority: 'P1', severity: 'Critical', cvss: '9.0–10.0', description: 'Full system compromise, data exfiltration' },
-    { priority: 'P2', severity: 'High', cvss: '7.0–8.9', description: 'Major flaws risking unauthorized access' },
-    { priority: 'P3', severity: 'Medium', cvss: '4.0–6.9', description: 'Flaws that need chaining to become exploitable' },
-    { priority: 'P4', severity: 'Low', cvss: '0.1–3.9', description: 'Minor misconfigurations or indirect threats' },
-    { priority: 'P5', severity: 'Informational', cvss: '0.0', description: 'Insightful but not risky on their own' }
-  ]
+    {
+      priority: "P1",
+      severity: "Critical",
+      cvss: "9.0–10.0",
+      description: "Full system compromise, data exfiltration",
+    },
+    {
+      priority: "P2",
+      severity: "High",
+      cvss: "7.0–8.9",
+      description: "Major flaws risking unauthorized access",
+    },
+    {
+      priority: "P3",
+      severity: "Medium",
+      cvss: "4.0–6.9",
+      description: "Flaws that need chaining to become exploitable",
+    },
+    {
+      priority: "P4",
+      severity: "Low",
+      cvss: "0.1–3.9",
+      description: "Minor misconfigurations or indirect threats",
+    },
+    {
+      priority: "P5",
+      severity: "Informational",
+      cvss: "0.0",
+      description: "Insightful but not risky on their own",
+    },
+  ];
 
   const methodologySteps = [
-    'Asset Selection',
-    'Reachability checks', 
-    'Informed initiation',
-    'Tool execution',
-    'Consolidation & Validation',
-    'Severity Reclassification (if any)',
-    'Reporting',
-    'Secure Sharing'
-  ]
+    "Asset Selection",
+    "Reachability checks",
+    "Informed initiation",
+    "Tool execution",
+    "Consolidation & Validation",
+    "Severity Reclassification (if any)",
+    "Reporting",
+    "Secure Sharing",
+  ];
 
   const getSeverityStyle = (severity: string) => {
     switch (severity.toLowerCase()) {
-      case 'critical': return 'color: #dc2626; background-color: #fef2f2; padding: 4px 8px; border-radius: 4px; font-weight: 600;'
-      case 'high': return 'color: #ea580c; background-color: #fff7ed; padding: 4px 8px; border-radius: 4px; font-weight: 600;'
-      case 'medium': return 'color: #d97706; background-color: #fffbeb; padding: 4px 8px; border-radius: 4px; font-weight: 600;'
-      case 'low': return 'color: #2563eb; background-color: #eff6ff; padding: 4px 8px; border-radius: 4px; font-weight: 600;'
-      default: return 'color: #374151; background-color: #f9fafb; padding: 4px 8px; border-radius: 4px; font-weight: 600;'
+      case "critical":
+        return "color: #dc2626; background-color: #fef2f2; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+      case "high":
+        return "color: #ea580c; background-color: #fff7ed; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+      case "medium":
+        return "color: #d97706; background-color: #fffbeb; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+      case "low":
+        return "color: #2563eb; background-color: #eff6ff; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
+      default:
+        return "color: #374151; background-color: #f9fafb; padding: 4px 8px; border-radius: 4px; font-weight: 600;";
     }
-  }
+  };
 
   return `
     <!DOCTYPE html>
@@ -324,7 +363,9 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
       <!-- COVER PAGE -->
       <div class="cover-page">
         <div class="cover-title">
-          ${report.source_type === 'internal' ? 'Internal' : 'External'} Vulnerability Assessment Report
+          ${
+            report.source_type === "internal" ? "Internal" : "External"
+          } Vulnerability Assessment Report
         </div>
         
         <div class="cover-grid">
@@ -334,7 +375,11 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
           </div>
           <div class="cover-field">
             <span class="cover-label">Date Range</span>
-            <span class="cover-value">${new Date(report.scan_start_date).toLocaleDateString()} - ${new Date(report.scan_end_date).toLocaleDateString()}</span>
+            <span class="cover-value">${new Date(
+              report.scan_start_date
+            ).toLocaleDateString()} - ${new Date(
+    report.scan_end_date
+  ).toLocaleDateString()}</span>
           </div>
           <div class="cover-field">
             <span class="cover-label">Version</span>
@@ -350,22 +395,22 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
           <div class="signature-field">
             <div class="signature-label">Assessee</div>
             <div class="signature-line"></div>
-            <div>${report.assessee || ''}</div>
+            <div>${report.assessee || ""}</div>
           </div>
           <div class="signature-field">
             <div class="signature-label">Assessor</div>
             <div class="signature-line"></div>
-            <div>${report.assessor || ''}</div>
+            <div>${report.assessor || ""}</div>
           </div>
           <div class="signature-field">
             <div class="signature-label">Reviewer</div>
             <div class="signature-line"></div>
-            <div>${report.reviewer || ''}</div>
+            <div>${report.reviewer || ""}</div>
           </div>
           <div class="signature-field">
             <div class="signature-label">Approved by</div>
             <div class="signature-line"></div>
-            <div>${report.approver || ''}</div>
+            <div>${report.approver || ""}</div>
           </div>
         </div>
       </div>
@@ -382,7 +427,9 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
               <tr>
                 <td style="font-weight: bold;">Test Started On</td>
-                <td>${new Date(report.scan_start_date).toLocaleDateString()}</td>
+                <td>${new Date(
+                  report.scan_start_date
+                ).toLocaleDateString()}</td>
               </tr>
               <tr>
                 <td style="font-weight: bold;">Test Completed On</td>
@@ -408,8 +455,12 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
         <div class="section page-break">
           <h1>Executive Summary</h1>
           <p style="font-size: 16px; line-height: 1.7; margin-bottom: 30px;">
-            This ${report.source_type} assessment was conducted to understand the vulnerabilities affecting the environment
-            of <strong>${report.org_name}</strong>. The assessment utilized automated scanning tools and manual verification 
+            This ${
+              report.source_type
+            } assessment was conducted to understand the vulnerabilities affecting the environment
+            of <strong>${
+              report.org_name
+            }</strong>. The assessment utilized automated scanning tools and manual verification 
             techniques to identify security weaknesses that could potentially be exploited by malicious actors. The findings 
             presented in this report are categorized according to industry-standard risk severity levels to facilitate 
             prioritized remediation efforts.
@@ -426,14 +477,20 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
             </thead>
             <tbody>
-              ${riskModel.map(risk => `
+              ${riskModel
+                .map(
+                  (risk) => `
                 <tr>
                   <td>${risk.priority}</td>
-                  <td><span style="${getSeverityStyle(risk.severity)}">${risk.severity}</span></td>
+                  <td><span style="${getSeverityStyle(risk.severity)}">${
+                    risk.severity
+                  }</span></td>
                   <td>${risk.cvss}</td>
                   <td>${risk.description}</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
         </div>
@@ -441,11 +498,17 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
         <!-- METHODOLOGY -->
         <div class="section">
           <h1>Methodology</h1>
-          ${methodologySteps.map((step, index) => `
+          ${methodologySteps
+            .map(
+              (step, index) => `
             <div class="methodology-step">
-              <strong>${index + 1}. ${step}:</strong> ${getMethodologyDescription(step)}
+              <strong>${
+                index + 1
+              }. ${step}:</strong> ${getMethodologyDescription(step)}
             </div>
-          `).join('')}
+          `
+            )
+            .join("")}
         </div>
 
         <!-- PROJECT SCOPE -->
@@ -460,13 +523,24 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
             </thead>
             <tbody>
-              ${hosts.map((host, index) => `
+              ${hosts
+                .map(
+                  (host, index) => `
                 <tr>
                   <td>${index + 1}</td>
                   <td style="font-family: monospace;">${host.ip_address}</td>
-                  <td><span style="${host.scan_status === 'completed' ? 'color: #059669; background-color: #d1fae5;' : 'color: #dc2626; background-color: #fee2e2;'} padding: 4px 8px; border-radius: 4px; font-weight: 600;">${host.scan_status.charAt(0).toUpperCase() + host.scan_status.slice(1)}</span></td>
+                  <td><span style="${
+                    host.scan_status === "completed"
+                      ? "color: #059669; background-color: #d1fae5;"
+                      : "color: #dc2626; background-color: #fee2e2;"
+                  } padding: 4px 8px; border-radius: 4px; font-weight: 600;">${
+                    host.scan_status.charAt(0).toUpperCase() +
+                    host.scan_status.slice(1)
+                  }</span></td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
           <p class="disclaimer">
@@ -489,7 +563,9 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
             </thead>
             <tbody>
-              ${hosts.map(host => `
+              ${hosts
+                .map(
+                  (host) => `
                 <tr>
                   <td style="font-family: monospace;">${host.ip_address}</td>
                   <td style="text-align: center;">${host.critical_count}</td>
@@ -498,14 +574,26 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
                   <td style="text-align: center;">${host.low_count}</td>
                   <td style="text-align: center; font-weight: bold;">${host.total_vulnerabilities}</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
               <tr class="total-row">
                 <td style="font-weight: bold;">Grand Total</td>
-                <td style="text-align: center; font-weight: bold;">${report.critical_count}</td>
-                <td style="text-align: center; font-weight: bold;">${report.high_count}</td>
-                <td style="text-align: center; font-weight: bold;">${report.medium_count}</td>
-                <td style="text-align: center; font-weight: bold;">${report.low_count}</td>
-                <td style="text-align: center; font-weight: bold;">${report.total_vulnerabilities}</td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.critical_count
+                }</td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.high_count
+                }</td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.medium_count
+                }</td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.low_count
+                }</td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.total_vulnerabilities
+                }</td>
               </tr>
             </tbody>
           </table>
@@ -523,34 +611,54 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
             </thead>
             <tbody>
               <tr>
-                <td><span style="${getSeverityStyle('critical')}">Critical</span></td>
-                <td style="text-align: center; font-weight: bold;">${report.critical_count}</td>
+                <td><span style="${getSeverityStyle(
+                  "critical"
+                )}">Critical</span></td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.critical_count
+                }</td>
               </tr>
               <tr>
-                <td><span style="${getSeverityStyle('high')}">High</span></td>
-                <td style="text-align: center; font-weight: bold;">${report.high_count}</td>
+                <td><span style="${getSeverityStyle("high")}">High</span></td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.high_count
+                }</td>
               </tr>
               <tr>
-                <td><span style="${getSeverityStyle('medium')}">Medium</span></td>
-                <td style="text-align: center; font-weight: bold;">${report.medium_count}</td>
+                <td><span style="${getSeverityStyle(
+                  "medium"
+                )}">Medium</span></td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.medium_count
+                }</td>
               </tr>
               <tr>
-                <td><span style="${getSeverityStyle('low')}">Low</span></td>
-                <td style="text-align: center; font-weight: bold;">${report.low_count}</td>
+                <td><span style="${getSeverityStyle("low")}">Low</span></td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.low_count
+                }</td>
               </tr>
               <tr>
-                <td><span style="${getSeverityStyle('informational')}">Informational</span></td>
-                <td style="text-align: center; font-weight: bold;">${report.info_count}</td>
+                <td><span style="${getSeverityStyle(
+                  "informational"
+                )}">Informational</span></td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.info_count
+                }</td>
               </tr>
               <tr class="total-row">
                 <td style="font-weight: bold;">Total</td>
-                <td style="text-align: center; font-weight: bold;">${report.total_vulnerabilities}</td>
+                <td style="text-align: center; font-weight: bold;">${
+                  report.total_vulnerabilities
+                }</td>
               </tr>
             </tbody>
           </table>
         </div>
 
-        ${report.zero_day_count > 0 ? `
+        ${
+          report.zero_day_count > 0
+            ? `
         <!-- ZERO-DAY VULNERABILITIES -->
         <div class="section zero-day-section page-break">
           <h1 style="color: #dc2626;">Zero-Day Vulnerabilities</h1>
@@ -564,15 +672,23 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
             </thead>
             <tbody>
-              ${['critical', 'high', 'medium', 'low'].map(severity => {
-                const count = zeroDayVulns.filter(v => v.severity === severity).length
-                return count > 0 ? `
+              ${["critical", "high", "medium", "low"]
+                .map((severity) => {
+                  const count = zeroDayVulns.filter(
+                    (v) => v.severity === severity
+                  ).length;
+                  return count > 0
+                    ? `
                   <tr>
-                    <td><span style="${getSeverityStyle(severity)}">${severity.charAt(0).toUpperCase() + severity.slice(1)}</span></td>
+                    <td><span style="${getSeverityStyle(severity)}">${
+                        severity.charAt(0).toUpperCase() + severity.slice(1)
+                      }</span></td>
                     <td style="text-align: center; font-weight: bold;">${count}</td>
                   </tr>
-                ` : ''
-              }).join('')}
+                `
+                    : "";
+                })
+                .join("")}
             </tbody>
           </table>
 
@@ -589,20 +705,35 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
             </thead>
             <tbody>
-              ${zeroDayVulns.map((vuln, index) => `
+              ${zeroDayVulns
+                .map(
+                  (vuln, index) => `
                 <tr>
                   <td>${index + 1}</td>
-                  <td style="font-family: monospace;">${vuln.cve_id || 'N/A'}</td>
-                  <td><span style="${getSeverityStyle(vuln.severity)}">${vuln.severity.charAt(0).toUpperCase() + vuln.severity.slice(1)}</span></td>
+                  <td style="font-family: monospace;">${
+                    vuln.cve_id || "N/A"
+                  }</td>
+                  <td><span style="${getSeverityStyle(vuln.severity)}">${
+                    vuln.severity.charAt(0).toUpperCase() +
+                    vuln.severity.slice(1)
+                  }</span></td>
                   <td style="font-family: monospace;">${vuln.host_ip}</td>
                   <td>${vuln.vulnerability_name}</td>
-                  <td>${vuln.fix_recommendation || vuln.solution || 'Update to latest version'}</td>
+                  <td>${
+                    vuln.fix_recommendation ||
+                    vuln.solution ||
+                    "Update to latest version"
+                  }</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
         <!-- ALL VULNERABILITIES WITH REMEDIATION -->
         <div class="section page-break">
@@ -618,15 +749,27 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
               </tr>
             </thead>
             <tbody>
-              ${vulnerabilities.filter(v => !v.is_zero_day).map((vuln, index) => `
+              ${vulnerabilities
+                .filter((v) => !v.is_zero_day)
+                .map(
+                  (vuln, index) => `
                 <tr>
                   <td>${index + 1}</td>
-                  <td><span style="${getSeverityStyle(vuln.severity)}">${vuln.severity.charAt(0).toUpperCase() + vuln.severity.slice(1)}</span></td>
+                  <td><span style="${getSeverityStyle(vuln.severity)}">${
+                    vuln.severity.charAt(0).toUpperCase() +
+                    vuln.severity.slice(1)
+                  }</span></td>
                   <td style="font-family: monospace;">${vuln.host_ip}</td>
                   <td>${vuln.vulnerability_name}</td>
-                  <td>${vuln.fix_recommendation || vuln.solution || 'See detailed description'}</td>
+                  <td>${
+                    vuln.fix_recommendation ||
+                    vuln.solution ||
+                    "See detailed description"
+                  }</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
         </div>
@@ -636,25 +779,41 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
           <h1>Conclusion</h1>
           <div style="font-size: 16px; line-height: 1.7; space-y: 20px;">
             <p style="margin-bottom: 20px;">
-              The vulnerability assessment of <strong>${report.org_name}</strong> has identified <strong>${report.total_vulnerabilities}</strong> vulnerabilities 
-              across <strong>${report.total_ips_tested}</strong> tested systems. The findings reveal a mix of security issues ranging from 
+              The vulnerability assessment of <strong>${
+                report.org_name
+              }</strong> has identified <strong>${
+    report.total_vulnerabilities
+  }</strong> vulnerabilities 
+              across <strong>${
+                report.total_ips_tested
+              }</strong> tested systems. The findings reveal a mix of security issues ranging from 
               critical vulnerabilities requiring immediate attention to informational findings that provide security insights.
             </p>
             
             <p style="margin-bottom: 20px;">
-              We strongly recommend prioritizing the remediation of <strong>${report.critical_count} critical</strong> and <strong>${report.high_count} high-severity</strong> vulnerabilities 
-              as they pose the most significant risk to the organization&apos;s security posture. The <strong>${report.medium_count} medium-severity</strong> vulnerabilities 
+              We strongly recommend prioritizing the remediation of <strong>${
+                report.critical_count
+              } critical</strong> and <strong>${
+    report.high_count
+  } high-severity</strong> vulnerabilities 
+              as they pose the most significant risk to the organization&apos;s security posture. The <strong>${
+                report.medium_count
+              } medium-severity</strong> vulnerabilities 
               should be addressed in the next maintenance cycle, while low-severity issues can be scheduled for routine maintenance.
             </p>
             
-            ${report.zero_day_count > 0 ? `
+            ${
+              report.zero_day_count > 0
+                ? `
             <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; border: 2px solid #fecaca; margin: 20px 0;">
               <p style="margin: 0; font-weight: bold;">
                 <strong>Critical Notice:</strong> This assessment identified <strong>${report.zero_day_count} zero-day vulnerabilities</strong> that require 
                 immediate attention due to their recent disclosure and potential for exploitation.
               </p>
             </div>
-            ` : ''}
+            `
+                : ""
+            }
             
             <p style="margin-bottom: 20px;">
               Following the remediation efforts, we recommend conducting a follow-up assessment to verify that vulnerabilities have been 
@@ -671,19 +830,27 @@ function generateReportHTML(report: ReportData, hosts: HostData[], vulnerabiliti
       </div>
     </body>
     </html>
-  `
+  `;
 }
 
 function getMethodologyDescription(step: string): string {
   const descriptions: Record<string, string> = {
-    'Asset Selection': 'Identified and catalogued all systems within the defined scope for vulnerability assessment.',
-    'Reachability checks': 'Verified network connectivity and accessibility of target systems prior to scanning.',
-    'Informed initiation': 'Coordinated with system administrators and stakeholders before commencing security testing.',
-    'Tool execution': 'Conducted comprehensive vulnerability scans using Nessus and other security assessment tools.',
-    'Consolidation & Validation': 'Aggregated scan results and manually verified findings to reduce false positives.',
-    'Severity Reclassification (if any)': 'Reviewed and adjusted vulnerability severity ratings based on environmental context.',
-    'Reporting': 'Compiled findings into this comprehensive report with detailed remediation guidance.',
-    'Secure Sharing': 'Delivered the final report through secure channels to authorized personnel only.'
-  }
-  return descriptions[step] || 'Standard security assessment procedure.'
+    "Asset Selection":
+      "Identified and catalogued all systems within the defined scope for vulnerability assessment.",
+    "Reachability checks":
+      "Verified network connectivity and accessibility of target systems prior to scanning.",
+    "Informed initiation":
+      "Coordinated with system administrators and stakeholders before commencing security testing.",
+    "Tool execution":
+      "Conducted comprehensive vulnerability scans using Nessus and other security assessment tools.",
+    "Consolidation & Validation":
+      "Aggregated scan results and manually verified findings to reduce false positives.",
+    "Severity Reclassification (if any)":
+      "Reviewed and adjusted vulnerability severity ratings based on environmental context.",
+    Reporting:
+      "Compiled findings into this comprehensive report with detailed remediation guidance.",
+    "Secure Sharing":
+      "Delivered the final report through secure channels to authorized personnel only.",
+  };
+  return descriptions[step] || "Standard security assessment procedure.";
 }
