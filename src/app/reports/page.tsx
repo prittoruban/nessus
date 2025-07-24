@@ -11,6 +11,7 @@ interface Report {
   source_type: 'internal' | 'external'
   scan_start_date: string
   scan_end_date: string
+  test_performed_at: string
   total_vulnerabilities: number
   critical_count: number
   high_count: number
@@ -524,6 +525,9 @@ export default function ReportsPage() {
                       <span className="text-slate-500">
                         {new Date(report.scan_start_date).toLocaleDateString()} - {new Date(report.scan_end_date).toLocaleDateString()}
                       </span>
+                    </div>
+                    <div className="mt-2 text-sm text-slate-600">
+                      <span className="font-medium">Test performed at:</span> {report.test_performed_at}
                     </div>
                   </div>
 

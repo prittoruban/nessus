@@ -21,6 +21,7 @@ type UploadFormData = {
   approver: string
   scanStartDate: string
   scanEndDate: string
+  testPerformedAt: string
   csvFile: File | null
 }
 
@@ -49,6 +50,7 @@ export default function UploadPage() {
     approver: '',
     scanStartDate: '',
     scanEndDate: '',
+    testPerformedAt: 'onsite',
     csvFile: null,
   })
 
@@ -166,6 +168,9 @@ export default function UploadPage() {
     if (!formData.scanEndDate) {
       newErrors.scanEndDate = 'Scan end date is required'
     }
+    if (!formData.testPerformedAt.trim()) {
+      newErrors.testPerformedAt = 'Test performed at location is required'
+    }
     if (!formData.csvFile) {
       newErrors.csvFile = 'CSV file is required'
     }
@@ -204,7 +209,8 @@ export default function UploadPage() {
         reviewer: formData.reviewer,
         approver: formData.approver,
         scanStartDate: formData.scanStartDate,
-        scanEndDate: formData.scanEndDate
+        scanEndDate: formData.scanEndDate,
+        testPerformedAt: formData.testPerformedAt
       }
       
       formDataToSend.append('formData', JSON.stringify(formDataJson))
@@ -262,6 +268,7 @@ export default function UploadPage() {
           approver: '',
           scanStartDate: '',
           scanEndDate: '',
+          testPerformedAt: 'onsite',
           csvFile: null,
         })
         setErrors({})
@@ -568,6 +575,24 @@ export default function UploadPage() {
                         <p className="text-red-500 text-sm">{errors.scanEndDate}</p>
                       )}
                     </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-slate-700">
+                      Test Performed At
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.testPerformedAt}
+                      onChange={(e) => handleInputChange('testPerformedAt', e.target.value)}
+                      placeholder="Enter test location (e.g., onsite, remote, hybrid)"
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 ${
+                        errors.testPerformedAt ? 'border-red-500' : 'border-slate-300'
+                      }`}
+                    />
+                    {errors.testPerformedAt && (
+                      <p className="text-red-500 text-sm">{errors.testPerformedAt}</p>
+                    )}
                   </div>
                 </div>
               )}

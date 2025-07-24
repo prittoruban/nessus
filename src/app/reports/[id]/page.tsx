@@ -11,6 +11,7 @@ interface Report {
   source_type: string
   scan_start_date: string
   scan_end_date: string
+  test_performed_at: string
   version: string
   document_type: string
   assessee: string | null
@@ -320,7 +321,7 @@ export default function ReportPage() {
                   ['Test Started On', new Date(report.scan_start_date).toLocaleDateString()],
                   ['Test Completed On', new Date(report.scan_end_date).toLocaleDateString()],
                   ['No. of IPs Tested', report.total_ips_tested.toString()],
-                  ['Test Performed At', 'On-site'],
+                  ['Test Performed At', report.test_performed_at],
                   ['Tool Used', 'Nessus']
                 ].map(([label, value], index) => (
                   <tr key={index} className="border-b border-gray-200">

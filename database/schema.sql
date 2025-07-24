@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS reports (
     -- Scan metadata
     scan_start_date TIMESTAMP WITH TIME ZONE NOT NULL,
     scan_end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    test_performed_at VARCHAR(255) NOT NULL DEFAULT 'onsite',
     
     -- Report metadata
     version VARCHAR(10) DEFAULT '1.0',

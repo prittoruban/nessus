@@ -13,7 +13,8 @@ const FormDataSchema = z.object({
   reviewer: z.string().min(1),
   approver: z.string().min(1),
   scanStartDate: z.string(),
-  scanEndDate: z.string()
+  scanEndDate: z.string(),
+  testPerformedAt: z.string().min(1)
 })
 
 // Types
@@ -192,6 +193,7 @@ export async function POST(request: NextRequest) {
         source_type: parsedFormData.sourceType,
         scan_start_date: parsedFormData.scanStartDate,
         scan_end_date: parsedFormData.scanEndDate,
+        test_performed_at: parsedFormData.testPerformedAt,
         assessee: parsedFormData.assessee,
         assessor: parsedFormData.assessor,
         reviewer: parsedFormData.reviewer,

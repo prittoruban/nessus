@@ -9,6 +9,7 @@ interface ReportData {
   source_type: string;
   scan_start_date: string;
   scan_end_date: string;
+  test_performed_at: string;
   version: string;
   document_type: string;
   assessee: string | null;
@@ -588,7 +589,7 @@ function generateEnhancedReportHTML(
             </tr>
             <tr>
               <td><strong>e. Test performed at</strong></td>
-              <td>${report.source_type === 'internal' ? 'On-site' : 'Remote'}</td>
+              <td>${report.test_performed_at}</td>
             </tr>
             <tr>
               <td><strong>f. Tool used for Network testing</strong></td>
