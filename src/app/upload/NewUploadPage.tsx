@@ -57,7 +57,6 @@ export default function UploadPage() {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [step, setStep] = useState(1)
   const [dragActive, setDragActive] = useState(false)
-  const [uploadSuccess, setUploadSuccess] = useState(false)
 
   // Fetch organizations
   const fetchOrganizations = useCallback(async () => {
@@ -189,31 +188,6 @@ export default function UploadPage() {
     setUploadProgress(0)
 
     try {
-      // Create FormData object
-      const formDataToSend = new FormData()
-      
-      // The API expects form data as a JSON string
-      const formDataJson = {
-        sourceType: formData.sourceType,
-        ...(formData.organizationId && { organizationId: formData.organizationId }),
-        organizationName: formData.organizationName,
-        assessee: formData.assessee,
-        assessor: formData.assessor,
-        reviewer: formData.reviewer,
-        approver: formData.approver,
-        scanStartDate: formData.scanStartDate,
-        scanEndDate: formData.scanEndDate
-      }
-      
-      formDataToSend.append('formData', JSON.stringify(formDataJson))
-      
-      if (formData.csvFile) {
-        formDataToSend.append('csvFile', formData.csvFile)
-      }
-
-      console.log('Uploading with data:', formDataJson)
-      console.log('CSV file:', formData.csvFile?.name, formData.csvFile?.size)
-
       // Simulate upload progress
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -223,56 +197,23 @@ export default function UploadPage() {
           }
           return prev + 10
         })
-      }, 300)
+      }, 200)
 
-      // Upload to API
-      const response = await fetch('/api/upload-scan', {
-        method: 'POST',
-        body: formDataToSend,
-      })
-
-      clearInterval(progressInterval)
-      setUploadProgress(100)
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Upload failed' }))
-        console.error('Upload failed:', errorData)
-        console.error('Response status:', response.status)
-        console.error('Response headers:', response.headers)
-        throw new Error(errorData.error || `Upload failed with status ${response.status}`)
-      }
-
-      const result = await response.json()
-      console.log('Upload successful:', result)
-
-      // Show success state
-      setUploadSuccess(true)
+      // Your upload logic here
+      await new Promise(resolve => setTimeout(resolve, 2000))
       
-      // Show success message and reset form
+      setUploadProgress(100)
+      clearInterval(progressInterval)
+      
+      // Reset form or redirect
       setTimeout(() => {
         setUploadProgress(0)
-        setUploadSuccess(false)
         setStep(1)
-        setFormData({
-          sourceType: 'internal',
-          organizationId: '',
-          organizationName: '',
-          assessee: '',
-          assessor: '',
-          reviewer: '',
-          approver: '',
-          scanStartDate: '',
-          scanEndDate: '',
-          csvFile: null,
-        })
-        setErrors({})
-        // Optionally redirect to reports page
-        // window.location.href = '/reports'
-      }, 3000)
+        // Reset form if needed
+      }, 1000)
 
     } catch (error) {
       console.error('Upload error:', error)
-      setErrors({ submit: error instanceof Error ? error.message : 'Upload failed. Please try again.' })
     } finally {
       setLoading(false)
     }
@@ -648,31 +589,6 @@ export default function UploadPage() {
                           style={{ width: `${uploadProgress}%` }}
                         />
                       </div>
-                    </div>
-                  )}
-
-                  {/* Success Message */}
-                  {uploadSuccess && (
-                    <div className="text-center space-y-3 animate-in fade-in-up duration-500">
-                      <div className="text-6xl">✅</div>
-                      <h3 className="text-xl font-semibold text-green-700">Upload Successful!</h3>
-                      <p className="text-green-600">Your vulnerability scan has been processed and saved.</p>
-                    </div>
-                  )}
-
-                  {/* Error Message */}
-                  {errors.submit && (
-                    <div className="text-center space-y-3 p-4 bg-red-50 rounded-xl border border-red-200">
-                      <div className="text-4xl">❌</div>
-                      <h3 className="text-lg font-semibold text-red-700">Upload Failed</h3>
-                      <p className="text-red-600">{errors.submit}</p>
-                      <button
-                        type="button"
-                        onClick={() => setErrors(prev => ({ ...prev, submit: '' }))}
-                        className="text-sm text-red-700 hover:text-red-800 underline"
-                      >
-                        Dismiss
-                      </button>
                     </div>
                   )}
                 </div>

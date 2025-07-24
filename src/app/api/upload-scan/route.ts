@@ -58,9 +58,21 @@ export async function POST(request: NextRequest) {
     const csvFile = formData.get('csvFile') as File
     const formDataJson = formData.get('formData') as string
 
+    // Debug logging
+    console.log('Received csvFile:', csvFile ? csvFile.name : 'null')
+    console.log('Received formData:', formDataJson ? 'present' : 'null')
+    console.log('FormData keys:', Array.from(formData.keys()))
+
     if (!csvFile || !formDataJson) {
       return NextResponse.json(
-        { error: 'Missing required files or data' },
+        { 
+          error: 'Missing required files or data',
+          debug: {
+            hasCsvFile: !!csvFile,
+            hasFormData: !!formDataJson,
+            formDataKeys: Array.from(formData.keys())
+          }
+        },
         { status: 400 }
       )
     }
