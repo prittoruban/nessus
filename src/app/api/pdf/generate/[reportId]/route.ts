@@ -86,7 +86,7 @@ export async function GET(
     const zeroDayVulns = vulnerabilities?.filter((v) => v.is_zero_day) || [];
 
     // Generate HTML content
-    const htmlContent = generateReportHTML(
+    const htmlContent = generateEnhancedReportHTML(
       report,
       hosts || [],
       vulnerabilities || [],
@@ -151,54 +151,77 @@ export async function GET(
   }
 }
 
-function generateReportHTML(
+function generateEnhancedReportHTML(
   report: ReportData,
   hosts: HostData[],
   vulnerabilities: VulnerabilityData[],
   zeroDayVulns: VulnerabilityData[]
 ): string {
+  const startDate = new Date(report.scan_start_date);
+  const endDate = new Date(report.scan_end_date);
+  
   const riskModel = [
     {
       priority: "P1",
       severity: "Critical",
-      cvss: "9.0–10.0",
-      description: "Full system compromise, data exfiltration",
+      cvss: "9.0-10.0",
+      description: "The exposure may be exploited resulting in bad outcomes such as unauthorized privilege escalation, data access, downtime, or compromise of data.",
     },
     {
       priority: "P2",
       severity: "High",
-      cvss: "7.0–8.9",
-      description: "Major flaws risking unauthorized access",
+      cvss: "7.0-8.9",
+      description: "These issues identify conditions that could directly result in the compromise or unauthorized access of a network, system, application, or sensitive information.",
     },
     {
       priority: "P3",
       severity: "Medium",
-      cvss: "4.0–6.9",
-      description: "Flaws that need chaining to become exploitable",
+      cvss: "4.0-6.9",
+      description: "These issues identify conditions that do not immediately or directly result in the compromise or unauthorized access of a network, system, application, or sensitive information, but do provide a capability or information that could in combination with others' capabilities or information result in the compromise unauthorized access of a network application or information.",
     },
     {
       priority: "P4",
       severity: "Low",
-      cvss: "0.1–3.9",
-      description: "Minor misconfigurations or indirect threats",
+      cvss: "0.1-3.9",
+      description: "These issues identify conditions that do not immediately or directly result in the compromise of a network, system, application, or information but do provide information that could be used in combination with other's information access to a network system, application, or information.",
     },
     {
       priority: "P5",
       severity: "Informational",
-      cvss: "0.0",
-      description: "Insightful but not risky on their own",
+      cvss: "0",
+      description: "Issues that leaking very basic information which might lead to information disclosure",
     },
   ];
 
   const methodologySteps = [
-    "Asset Selection",
-    "Reachability checks",
-    "Informed initiation",
-    "Tool execution",
-    "Consolidation & Validation",
-    "Severity Reclassification (if any)",
-    "Reporting",
-    "Secure Sharing",
+    {
+      title: "Determine Assets",
+      description: `The first step in vulnerability assessment is to check the assets shared by ${report.org_name} and understand the scope. Based on the identified scope list out the assets which are included in the scope.`
+    },
+    {
+      title: "Check Reachability and confirm",
+      description: "Once the scope is confirmed as per the first step, proceed to check the connectivity. The connectivity and reachability to the in-scope assets are controlled by VLANS and or other restrictions like Firewall Rules. Once the reachability is validated, it is confirmed that all the required network permissions are in place to carry out the vulnerability assessment."
+    },
+    {
+      title: "Inform Start of Activity",
+      description: `Inform the start of the activity to the designated single point of contact and get confirmation to start the activity and the defined VA window. This is a critical step since networks are dynamic in nature and there may be last-minute changes. Confirmation from the ${report.org_name} single-point of contact is essential to start the activity. On confirmation, Check the readiness of the tools and start the vulnerability assessment tools to the in-scope assets to identify security flaws and weaknesses from the tools.`
+    },
+    {
+      title: "Consolidate and validate the results",
+      description: "The next step is to work with the collected data from the tool. Export the data in a preferred format and start analyzing the results. Check the results with the CVE ratings and other standard ratings. Check the identified CPEs with the listed CVSS and CPE from NVD and other standard locations. Identify the source as well as the root cause of the security weaknesses based on the CPE (Products and Listed Applications). Validate the suggested Remediation steps against the CVE portal and other vendor-shared solutions."
+    },
+    {
+      title: "Reclassify Results",
+      description: "Customers generally follow their internal Risk classifications. It varies from company to company and is dependent on the organization-specific Risk models. Hence reclassify the findings against shared Risk ratings by the customer."
+    },
+    {
+      title: "Report Creation and Quality Check",
+      description: "The next phase in the vulnerability assessment is to report the vulnerabilities identified in the specified templates. Ensure to capture essential data and version information as applicable. Validate the data in the document against the data identified by the tool."
+    },
+    {
+      title: "Share Report",
+      description: `Once all the above steps are completed, share the report to ${report.org_name} in a secure manner. Preferably walk the HTC through the report to ensure clear understanding of the observations. Ensure that the results are in a pdf document which is password protected. Prevent copying or data extraction as applicable. Share the password through a secondary channel to the single point contact.`
+    }
   ];
 
   const getSeverityStyle = (severity: string) => {
@@ -218,138 +241,220 @@ function generateReportHTML(
 
   return `
     <!DOCTYPE html>
-    <html>
+    <html lang="en">
     <head>
       <meta charset="UTF-8">
-      <title>${report.org_name} Vulnerability Assessment Report</title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>${report.org_name} - Vulnerability Assessment Report</title>
       <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
         body { 
-          font-family: Arial, sans-serif; 
+          font-family: 'Arial', sans-serif; 
           line-height: 1.6; 
           color: #333; 
-          margin: 0; 
-          padding: 0;
+          font-size: 14px;
         }
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .section { margin-bottom: 40px; page-break-inside: avoid; }
+        
         .cover-page { 
-          text-align: center; 
-          page-break-after: always; 
-          padding: 60px 0;
+          height: 100vh; 
+          display: flex; 
+          flex-direction: column; 
+          justify-content: space-between; 
+          padding: 40px; 
+          page-break-after: always;
+          text-align: center;
         }
+        
+        .header-section {
+          margin-bottom: 40px;
+        }
+        
         .cover-title { 
           font-size: 28px; 
           font-weight: bold; 
-          margin-bottom: 40px; 
+          color: #1f2937; 
+          margin-bottom: 30px;
+          border-bottom: 3px solid #3b82f6;
+          padding-bottom: 15px;
+        }
+        
+        .org-name {
+          font-size: 32px;
+          font-weight: bold;
           color: #1f2937;
+          margin: 30px 0;
         }
-        .cover-grid { 
-          display: grid; 
-          grid-template-columns: 1fr 1fr; 
-          gap: 30px; 
-          margin: 40px 0;
+        
+        .scan-dates {
+          font-size: 16px;
+          margin: 20px 0;
+          color: #4b5563;
         }
-        .cover-field { 
-          text-align: left; 
-          margin-bottom: 20px;
+        
+        .company-info {
+          text-align: left;
+          background-color: #f8fafc;
+          padding: 25px;
+          border-radius: 10px;
+          margin: 30px 0;
         }
-        .cover-label { 
-          font-weight: bold; 
-          color: #374151; 
-          display: block; 
-          margin-bottom: 5px;
+        
+        .company-header {
+          font-size: 18px;
+          font-weight: bold;
+          color: #1f2937;
+          margin-bottom: 15px;
         }
-        .cover-value { 
-          font-size: 18px; 
-          color: #111827;
+        
+        .company-details {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          margin-top: 15px;
         }
-        .signatures { 
-          display: grid; 
-          grid-template-columns: repeat(4, 1fr); 
-          gap: 20px; 
-          margin-top: 60px;
+        
+        .doc-control-table {
+          margin: 30px 0;
         }
-        .signature-field { 
-          text-align: center;
+        
+        .doc-control-table table {
+          width: 100%;
+          border-collapse: collapse;
+          margin: 20px 0;
         }
-        .signature-label { 
-          font-weight: bold; 
-          margin-bottom: 10px;
+        
+        .doc-control-table th,
+        .doc-control-table td {
+          border: 1px solid #d1d5db;
+          padding: 12px;
+          text-align: left;
         }
-        .signature-line { 
-          border-bottom: 2px solid #d1d5db; 
-          height: 30px; 
-          margin-bottom: 5px;
+        
+        .doc-control-table th {
+          background-color: #f9fafb;
+          font-weight: bold;
         }
+        
+        .disclaimers {
+          margin-top: auto;
+          font-size: 12px;
+          color: #6b7280;
+          font-style: italic;
+          line-height: 1.5;
+        }
+        
+        .disclaimer-box {
+          background-color: #fef3c7;
+          border: 1px solid #f59e0b;
+          padding: 15px;
+          margin: 10px 0;
+          border-radius: 5px;
+        }
+        
+        .section { 
+          margin: 30px 0; 
+          padding: 0 20px;
+        }
+        
         h1 { 
           font-size: 24px; 
           font-weight: bold; 
           color: #1f2937; 
-          margin-bottom: 20px; 
-          border-bottom: 2px solid #e5e7eb; 
+          margin-bottom: 20px;
+          border-bottom: 2px solid #3b82f6;
           padding-bottom: 10px;
         }
+        
         h2 { 
           font-size: 20px; 
           font-weight: bold; 
           color: #374151; 
-          margin: 30px 0 15px 0;
+          margin: 25px 0 15px 0;
         }
+        
+        h3 { 
+          font-size: 16px; 
+          font-weight: bold; 
+          color: #4b5563; 
+          margin: 20px 0 10px 0;
+        }
+        
+        p { 
+          margin-bottom: 15px; 
+          text-align: justify;
+        }
+        
         table { 
           width: 100%; 
           border-collapse: collapse; 
           margin: 20px 0; 
           font-size: 14px;
         }
+        
         th, td { 
           padding: 12px; 
           text-align: left; 
           border: 1px solid #d1d5db;
         }
+        
         th { 
           background-color: #f9fafb; 
           font-weight: bold; 
           color: #374151;
         }
+        
         .total-row { 
           background-color: #f3f4f6; 
           font-weight: bold;
         }
-        .manifest-table { 
-          background-color: #f9fafb; 
-          border-radius: 8px; 
-          padding: 20px;
+        
+        .manifest-section {
+          background-color: #f8fafc;
+          padding: 25px;
+          border-radius: 10px;
+          margin: 25px 0;
         }
-        .manifest-table table { 
-          margin: 0;
+        
+        .manifest-table table {
+          background-color: white;
+          border: 1px solid #e5e7eb;
         }
-        .manifest-table td { 
-          border: none; 
-          border-bottom: 1px solid #e5e7eb; 
-          padding: 15px 0;
-        }
+        
         .methodology-step { 
-          margin-bottom: 20px; 
-          padding: 15px; 
+          margin-bottom: 25px; 
+          padding: 20px; 
           background-color: #f9fafb; 
-          border-radius: 6px;
+          border-radius: 8px;
+          border-left: 4px solid #3b82f6;
         }
+        
+        .methodology-title {
+          font-weight: bold;
+          font-size: 16px;
+          color: #1f2937;
+          margin-bottom: 10px;
+        }
+        
         .zero-day-section { 
           background-color: #fef2f2; 
           border: 2px solid #fecaca; 
           border-radius: 8px; 
-          padding: 20px; 
-          margin: 20px 0;
+          padding: 25px; 
+          margin: 25px 0;
         }
-        .disclaimer { 
-          font-style: italic; 
-          color: #6b7280; 
-          font-size: 12px; 
-          margin-top: 15px;
+        
+        .zero-day-header {
+          color: #dc2626;
+          font-size: 20px;
+          font-weight: bold;
+          margin-bottom: 15px;
         }
+        
         .page-break { 
           page-break-before: always;
         }
+        
         .severity-badge { 
           display: inline-block; 
           padding: 4px 8px; 
@@ -357,252 +462,390 @@ function generateReportHTML(
           font-size: 12px; 
           font-weight: 600;
         }
+        
+        .toc-section {
+          padding: 40px;
+          page-break-after: always;
+        }
+        
+        .toc-item {
+          display: flex;
+          justify-content: space-between;
+          padding: 8px 0;
+          border-bottom: 1px dotted #d1d5db;
+        }
+        
+        .scope-table {
+          margin: 20px 0;
+        }
+        
+        .executive-summary {
+          background-color: #f8fafc;
+          padding: 25px;
+          border-radius: 10px;
+          margin: 25px 0;
+        }
       </style>
     </head>
     <body>
       <!-- COVER PAGE -->
       <div class="cover-page">
-        <div class="cover-title">
-          ${
-            report.source_type === "internal" ? "Internal" : "External"
-          } Vulnerability Assessment Report
-        </div>
-        
-        <div class="cover-grid">
-          <div class="cover-field">
-            <span class="cover-label">Organization Name</span>
-            <span class="cover-value">${report.org_name}</span>
+        <div class="header-section">
+          <div class="cover-title">
+            ${report.source_type === "internal" ? "Internal" : "External"} Vulnerability Assessment Report
           </div>
-          <div class="cover-field">
-            <span class="cover-label">Date Range</span>
-            <span class="cover-value">${new Date(
-              report.scan_start_date
-            ).toLocaleDateString()} - ${new Date(
-    report.scan_end_date
-  ).toLocaleDateString()}</span>
+          
+          <div class="org-name">${report.org_name}</div>
+          
+          <div class="scan-dates">
+            VA Conducted on: ${startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} to ${endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+            <br>
+            Conducted by
           </div>
-          <div class="cover-field">
-            <span class="cover-label">Version</span>
-            <span class="cover-value">${report.version}</span>
+          
+          <div class="company-info">
+            <div class="company-header">HTC Global Services</div>
+            <div class="company-details">
+              <div>
+                Unit 25, SDF II, Phase II, MEPZ<br>
+                Chennai- 600045. India.<br>
+                Phone: (44) 45158888 / 45158800
+              </div>
+              <div>
+                H.Q 3270 West Big Beaver Road, Troy<br>
+                MI 48084<br>
+                Phone: (248)7862500
+              </div>
+            </div>
           </div>
-          <div class="cover-field">
-            <span class="cover-label">Document Type</span>
-            <span class="cover-value">${report.document_type}</span>
-          </div>
-        </div>
-
-        <div class="signatures">
-          <div class="signature-field">
-            <div class="signature-label">Assessee</div>
-            <div class="signature-line"></div>
-            <div>${report.assessee || ""}</div>
-          </div>
-          <div class="signature-field">
-            <div class="signature-label">Assessor</div>
-            <div class="signature-line"></div>
-            <div>${report.assessor || ""}</div>
-          </div>
-          <div class="signature-field">
-            <div class="signature-label">Reviewer</div>
-            <div class="signature-line"></div>
-            <div>${report.reviewer || ""}</div>
-          </div>
-          <div class="signature-field">
-            <div class="signature-label">Approved by</div>
-            <div class="signature-line"></div>
-            <div>${report.approver || ""}</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="container">
-        <!-- SCAN MANIFEST -->
-        <div class="section">
-          <h1>Scan Manifest</h1>
-          <div class="manifest-table">
+          
+          <div class="doc-control-table">
             <table>
               <tr>
-                <td style="font-weight: bold; width: 300px;">Description</td>
-                <td>Network Vulnerability Assessment</td>
+                <th>Document Type:</th>
+                <td>${report.document_type}</td>
+                <th>Version #:</th>
+                <td>${report.version}</td>
               </tr>
               <tr>
-                <td style="font-weight: bold;">Test Started On</td>
-                <td>${new Date(
-                  report.scan_start_date
-                ).toLocaleDateString()}</td>
+                <th>Assessee:</th>
+                <td>${report.assessee || ''}</td>
+                <th>Signature:</th>
+                <td></td>
               </tr>
               <tr>
-                <td style="font-weight: bold;">Test Completed On</td>
-                <td>${new Date(report.scan_end_date).toLocaleDateString()}</td>
+                <th>Assessor:</th>
+                <td>${report.assessor || ''}</td>
+                <th>Signature:</th>
+                <td></td>
               </tr>
               <tr>
-                <td style="font-weight: bold;">No. of IPs Tested</td>
-                <td>${report.total_ips_tested}</td>
+                <th>Reviewer:</th>
+                <td>${report.reviewer || ''}</td>
+                <th>Signature:</th>
+                <td></td>
               </tr>
               <tr>
-                <td style="font-weight: bold;">Test Performed At</td>
-                <td>On-site</td>
-              </tr>
-              <tr>
-                <td style="font-weight: bold;">Tool Used</td>
-                <td>Nessus</td>
+                <th>Approved by:</th>
+                <td>${report.approver || ''}</td>
+                <th>Signature:</th>
+                <td></td>
               </tr>
             </table>
           </div>
         </div>
+        
+        <div class="disclaimers">
+          <div class="disclaimer-box">
+            "No part of this document may be reproduced or transmitted in any form or by any means electronic or mechanical including photocopying and recording or by any information storage or retrieval system except as may be expressly permitted."
+          </div>
+          <div class="disclaimer-box">
+            "Recipient of this document implicitly consents to this and also in consent with the applicable local privacy law"
+          </div>
+        </div>
+      </div>
 
-        <!-- EXECUTIVE SUMMARY -->
-        <div class="section page-break">
-          <h1>Executive Summary</h1>
-          <p style="font-size: 16px; line-height: 1.7; margin-bottom: 30px;">
-            This ${
-              report.source_type
-            } assessment was conducted to understand the vulnerabilities affecting the environment
-            of <strong>${
-              report.org_name
-            }</strong>. The assessment utilized automated scanning tools and manual verification 
-            techniques to identify security weaknesses that could potentially be exploited by malicious actors. The findings 
-            presented in this report are categorized according to industry-standard risk severity levels to facilitate 
-            prioritized remediation efforts.
+      <!-- SCAN MANIFEST -->
+      <div class="section page-break">
+        <h1>Scan Manifest</h1>
+        <div class="manifest-section">
+          <table class="manifest-table">
+            <tr>
+              <td><strong>a. Description</strong></td>
+              <td>Network Vulnerability Assessment</td>
+            </tr>
+            <tr>
+              <td><strong>b. Test started on</strong></td>
+              <td>${startDate.toLocaleDateString('en-GB')}</td>
+            </tr>
+            <tr>
+              <td><strong>c. Test Completed on</strong></td>
+              <td>${endDate.toLocaleDateString('en-GB')}</td>
+            </tr>
+            <tr>
+              <td><strong>d. No. of IP's tested</strong></td>
+              <td>${report.total_ips_tested} IP's</td>
+            </tr>
+            <tr>
+              <td><strong>e. Test performed at</strong></td>
+              <td>${report.source_type === 'internal' ? 'On-site' : 'Remote'}</td>
+            </tr>
+            <tr>
+              <td><strong>f. Tool used for Network testing</strong></td>
+              <td>Nessus</td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- TABLE OF CONTENTS -->
+      <div class="toc-section page-break">
+        <h1>Table of Contents</h1>
+        <div style="margin-top: 30px;">
+          <div class="toc-item">
+            <span>1. Executive Summary</span>
+            <span>5</span>
+          </div>
+          <div class="toc-item">
+            <span>1.1 Overview</span>
+            <span>5</span>
+          </div>
+          <div class="toc-item">
+            <span>1.2 Risk Model</span>
+            <span>6</span>
+          </div>
+          <div class="toc-item">
+            <span>2. Vulnerability Assessment Methodology</span>
+            <span>7</span>
+          </div>
+          <div class="toc-item">
+            <span>2.1 Methodology</span>
+            <span>7</span>
+          </div>
+          <div class="toc-item">
+            <span>2.2 Project Scope</span>
+            <span>9</span>
+          </div>
+          <div class="toc-item">
+            <span>3. Summary of Vulnerable Hosts in Network Segments</span>
+            <span>10</span>
+          </div>
+          <div class="toc-item">
+            <span>4. Zero Day Vulnerabilities</span>
+            <span>11</span>
+          </div>
+          <div class="toc-item">
+            <span>5. Vulnerabilities finding with Remediation</span>
+            <span>14</span>
+          </div>
+          <div class="toc-item">
+            <span>6. Conclusion</span>
+            <span>27</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- EXECUTIVE SUMMARY -->
+      <div class="section page-break">
+        <h1>1. Executive Summary</h1>
+        
+        <h2>1.1 Overview</h2>
+        <div class="executive-summary">
+          <p>
+            This report provides the Scan results of the Vulnerability Assessment conducted on <strong>${report.org_name}</strong> from HTC Global Services. 
+            The objective was to identify Network-level security vulnerabilities that could impact confidentiality, integrity, or availability. 
+            The assessment included unauthorized transactions, confidential data access, and a range of vulnerabilities on IP's.
           </p>
           
-          <h2>Risk Model</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Priority</th>
-                <th>Severity</th>
-                <th>CVSS Score</th>
-                <th>Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${riskModel
-                .map(
-                  (risk) => `
-                <tr>
-                  <td>${risk.priority}</td>
-                  <td><span style="${getSeverityStyle(risk.severity)}">${
-                    risk.severity
-                  }</span></td>
-                  <td>${risk.cvss}</td>
-                  <td>${risk.description}</td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </div>
-
-        <!-- METHODOLOGY -->
-        <div class="section">
-          <h1>Methodology</h1>
-          ${methodologySteps
-            .map(
-              (step, index) => `
-            <div class="methodology-step">
-              <strong>${
-                index + 1
-              }. ${step}:</strong> ${getMethodologyDescription(step)}
-            </div>
-          `
-            )
-            .join("")}
-        </div>
-
-        <!-- PROJECT SCOPE -->
-        <div class="section page-break">
-          <h1>Project Scope</h1>
-          <table>
-            <thead>
-              <tr>
-                <th style="width: 80px;">S.No</th>
-                <th>IP Address</th>
-                <th style="width: 120px;">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${hosts
-                .map(
-                  (host, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td style="font-family: monospace;">${host.ip_address}</td>
-                  <td><span style="${
-                    host.scan_status === "completed"
-                      ? "color: #059669; background-color: #d1fae5;"
-                      : "color: #dc2626; background-color: #fee2e2;"
-                  } padding: 4px 8px; border-radius: 4px; font-weight: 600;">${
-                    host.scan_status.charAt(0).toUpperCase() +
-                    host.scan_status.slice(1)
-                  }</span></td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
-          <p class="disclaimer">
-            This assessment did not include brute-force, DoS, phishing, or physical methods.
+          <p>
+            The findings in this report pertain to the conditions discovered during the testing, and not necessarily the current state. 
+            HTC Global Services engaged in this vulnerability assessment to identify risks and provide security enhancement recommendations 
+            for internal-facing IPs. The assessment was conducted on ${startDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })} to ${endDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}, 
+            with the goal of uncovering vulnerabilities and assessing active exploits.
+          </p>
+          
+          <p>
+            In summary, this document outlines the analysis, findings, and recommendations from HTC Global Services for the vulnerabilities, 
+            aimed at enhancing the overall security posture of the network infrastructure.
           </p>
         </div>
 
-        <!-- SUMMARY OF VULNERABLE HOSTS -->
-        <div class="section">
-          <h1>Summary of Vulnerable Hosts</h1>
-          <table>
-            <thead>
+        <h2>1.2 Risk Model</h2>
+        <p>Throughout this document, HTC has categorized the risk ratings for discovered vulnerabilities based on Global Standard risk definitions.</p>
+        
+        <table>
+          <thead>
+            <tr>
+              <th>Priority Level</th>
+              <th>Severity Scale</th>
+              <th>CVSS Score</th>
+              <th>Description of Vulnerability</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${riskModel
+              .map(
+                (risk) => `
               <tr>
-                <th>Host IP</th>
-                <th style="text-align: center;">Critical</th>
-                <th style="text-align: center;">High</th>
-                <th style="text-align: center;">Medium</th>
-                <th style="text-align: center;">Low</th>
-                <th style="text-align: center;">Total</th>
+                <td style="font-weight: bold;">${risk.priority}</td>
+                <td><span style="${getSeverityStyle(risk.severity)}">${risk.severity}</span></td>
+                <td style="font-family: monospace;">${risk.cvss}</td>
+                <td>${risk.description}</td>
               </tr>
-            </thead>
-            <tbody>
-              ${hosts
-                .map(
-                  (host) => `
-                <tr>
-                  <td style="font-family: monospace;">${host.ip_address}</td>
-                  <td style="text-align: center;">${host.critical_count}</td>
-                  <td style="text-align: center;">${host.high_count}</td>
-                  <td style="text-align: center;">${host.medium_count}</td>
-                  <td style="text-align: center;">${host.low_count}</td>
-                  <td style="text-align: center; font-weight: bold;">${host.total_vulnerabilities}</td>
-                </tr>
-              `
-                )
-                .join("")}
-              <tr class="total-row">
-                <td style="font-weight: bold;">Grand Total</td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.critical_count
-                }</td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.high_count
-                }</td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.medium_count
-                }</td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.low_count
-                }</td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.total_vulnerabilities
-                }</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
 
-        <!-- RISK-LEVEL SUMMARY -->
-        <div class="section page-break">
-          <h1>Risk-Level Summary</h1>
-          <table style="width: 50%;">
+      <!-- METHODOLOGY -->
+      <div class="section page-break">
+        <h1>2. Vulnerability Assessment Methodology</h1>
+        
+        <h2>2.1 Methodology</h2>
+        ${methodologySteps
+          .map(
+            (step, index) => `
+          <div class="methodology-step">
+            <div class="methodology-title">${index + 1}. ${step.title}:</div>
+            <p>${step.description}</p>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+
+      <!-- PROJECT SCOPE -->
+      <div class="section page-break">
+        <h1>2.2 Project Scope</h1>
+        <p>
+          Formal communication from the customer outlined the IPs to be tested and the type of testing to be carried out. 
+          Based on the received communication a security team was deployed to perform this activity. The assigned team 
+          carried out the network vulnerability assessment for the IP's shared by ${report.org_name}.
+        </p>
+        
+        <h3>Scope Of IP's</h3>
+        <table class="scope-table">
+          <thead>
+            <tr>
+              <th style="width: 80px;">S No</th>
+              <th>IP Address</th>
+              <th style="width: 120px;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${hosts
+              .map(
+                (host, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td style="font-family: monospace;">${host.ip_address}</td>
+                <td><span style="${
+                  host.scan_status === "completed"
+                    ? "color: #059669; background-color: #d1fae5;"
+                    : "color: #dc2626; background-color: #fee2e2;"
+                } padding: 4px 8px; border-radius: 4px; font-weight: 600;">${
+                  host.scan_status.charAt(0).toUpperCase() +
+                  host.scan_status.slice(1)
+                }</span></td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+        
+        <p style="margin-top: 20px; font-style: italic; color: #6b7280;">
+          In this testing except Brute force attack, HTC did not attempt any active network-based Denial of Service (DoS), 
+          Password cracking, physical, process, and social engineering attacks.
+        </p>
+      </div>
+
+      <!-- SUMMARY OF VULNERABLE HOSTS -->
+      <div class="section page-break">
+        <h1>3. Summary of Vulnerable Hosts in Network Segments</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>S.No</th>
+              <th>Host</th>
+              <th style="text-align: center;">Critical</th>
+              <th style="text-align: center;">High</th>
+              <th style="text-align: center;">Medium</th>
+              <th style="text-align: center;">Low</th>
+              <th style="text-align: center;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${hosts
+              .map(
+                (host, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td style="font-family: monospace;">${host.ip_address}</td>
+                <td style="text-align: center;">${host.critical_count}</td>
+                <td style="text-align: center;">${host.high_count}</td>
+                <td style="text-align: center;">${host.medium_count}</td>
+                <td style="text-align: center;">${host.low_count}</td>
+                <td style="text-align: center; font-weight: bold;">${host.total_vulnerabilities}</td>
+              </tr>
+            `
+              )
+              .join("")}
+            <tr class="total-row">
+              <td style="font-weight: bold;">Total Count</td>
+              <td style="font-weight: bold;"></td>
+              <td style="text-align: center; font-weight: bold;">${report.critical_count}</td>
+              <td style="text-align: center; font-weight: bold;">${report.high_count}</td>
+              <td style="text-align: center; font-weight: bold;">${report.medium_count}</td>
+              <td style="text-align: center; font-weight: bold;">${report.low_count}</td>
+              <td style="text-align: center; font-weight: bold;">${report.total_vulnerabilities}</td>
+            </tr>
+          </tbody>
+        </table>
+        
+        <h3>Vulnerabilities count based on Risk Levels</h3>
+        <table style="max-width: 400px;">
+          <thead>
+            <tr>
+              <th>Risk</th>
+              <th style="text-align: center;">Count</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span style="${getSeverityStyle('Critical')}">Critical</span></td>
+              <td style="text-align: center; font-weight: bold;">${report.critical_count}</td>
+            </tr>
+            <tr>
+              <td><span style="${getSeverityStyle('High')}">High</span></td>
+              <td style="text-align: center; font-weight: bold;">${report.high_count}</td>
+            </tr>
+            <tr>
+              <td><span style="${getSeverityStyle('Medium')}">Medium</span></td>
+              <td style="text-align: center; font-weight: bold;">${report.medium_count}</td>
+            </tr>
+            <tr>
+              <td><span style="${getSeverityStyle('Low')}">Low</span></td>
+              <td style="text-align: center; font-weight: bold;">${report.low_count}</td>
+            </tr>
+            <tr class="total-row">
+              <td style="font-weight: bold;">Grand Total</td>
+              <td style="text-align: center; font-weight: bold;">${report.total_vulnerabilities}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- ZERO DAY VULNERABILITIES -->
+      ${zeroDayVulns.length > 0 ? `
+      <div class="section page-break">
+        <h1>4. Zero Day Vulnerabilities</h1>
+        
+        <div class="zero-day-section">
+          <div class="zero-day-header">Zero Day Vulnerabilities based on Risk Levels</div>
+          <table style="max-width: 400px;">
             <thead>
               <tr>
                 <th>Risk</th>
@@ -610,247 +853,140 @@ function generateReportHTML(
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td><span style="${getSeverityStyle(
-                  "critical"
-                )}">Critical</span></td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.critical_count
-                }</td>
-              </tr>
-              <tr>
-                <td><span style="${getSeverityStyle("high")}">High</span></td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.high_count
-                }</td>
-              </tr>
-              <tr>
-                <td><span style="${getSeverityStyle(
-                  "medium"
-                )}">Medium</span></td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.medium_count
-                }</td>
-              </tr>
-              <tr>
-                <td><span style="${getSeverityStyle("low")}">Low</span></td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.low_count
-                }</td>
-              </tr>
-              <tr>
-                <td><span style="${getSeverityStyle(
-                  "informational"
-                )}">Informational</span></td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.info_count
-                }</td>
-              </tr>
-              <tr class="total-row">
-                <td style="font-weight: bold;">Total</td>
-                <td style="text-align: center; font-weight: bold;">${
-                  report.total_vulnerabilities
-                }</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        ${
-          report.zero_day_count > 0
-            ? `
-        <!-- ZERO-DAY VULNERABILITIES -->
-        <div class="section zero-day-section page-break">
-          <h1 style="color: #dc2626;">Zero-Day Vulnerabilities</h1>
-          
-          <h2>Zero-Day Risk Distribution</h2>
-          <table style="margin-bottom: 30px;">
-            <thead>
-              <tr style="background-color: #fef2f2;">
-                <th>Risk Level</th>
-                <th style="text-align: center;">Count</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${["critical", "high", "medium", "low"]
-                .map((severity) => {
-                  const count = zeroDayVulns.filter(
-                    (v) => v.severity === severity
-                  ).length;
-                  return count > 0
-                    ? `
+              ${['Critical', 'High', 'Medium', 'Low'].map(severity => {
+                const count = zeroDayVulns.filter(v => v.severity.toLowerCase() === severity.toLowerCase()).length;
+                return `
                   <tr>
-                    <td><span style="${getSeverityStyle(severity)}">${
-                        severity.charAt(0).toUpperCase() + severity.slice(1)
-                      }</span></td>
+                    <td><span style="${getSeverityStyle(severity)}">${severity}</span></td>
                     <td style="text-align: center; font-weight: bold;">${count}</td>
                   </tr>
-                `
-                    : "";
-                })
-                .join("")}
-            </tbody>
-          </table>
-
-          <h2>Detailed Zero-Day Vulnerabilities</h2>
-          <table>
-            <thead>
-              <tr style="background-color: #fef2f2;">
-                <th style="width: 60px;">S.No</th>
-                <th>CVE ID</th>
-                <th>Risk</th>
-                <th>Host IP</th>
-                <th>Name</th>
-                <th>Recommended Fix</th>
+                `;
+              }).join('')}
+              <tr class="total-row">
+                <td style="font-weight: bold;">Total</td>
+                <td style="text-align: center; font-weight: bold;">${zeroDayVulns.length}</td>
               </tr>
-            </thead>
-            <tbody>
-              ${zeroDayVulns
-                .map(
-                  (vuln, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td style="font-family: monospace;">${
-                    vuln.cve_id || "N/A"
-                  }</td>
-                  <td><span style="${getSeverityStyle(vuln.severity)}">${
-                    vuln.severity.charAt(0).toUpperCase() +
-                    vuln.severity.slice(1)
-                  }</span></td>
-                  <td style="font-family: monospace;">${vuln.host_ip}</td>
-                  <td>${vuln.vulnerability_name}</td>
-                  <td>${
-                    vuln.fix_recommendation ||
-                    vuln.solution ||
-                    "Update to latest version"
-                  }</td>
-                </tr>
-              `
-                )
-                .join("")}
             </tbody>
           </table>
         </div>
-        `
-            : ""
-        }
 
-        <!-- ALL VULNERABILITIES WITH REMEDIATION -->
-        <div class="section page-break">
-          <h1>All Vulnerabilities with Remediation</h1>
-          <table>
-            <thead>
+        <h3>4.1 Zero Day Vulnerabilities finding with Remediation</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>S No</th>
+              <th>CVE</th>
+              <th>Risk</th>
+              <th>Host</th>
+              <th>Name</th>
+              <th>Solution</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${zeroDayVulns
+              .map(
+                (vuln, index) => `
               <tr>
-                <th style="width: 60px;">S.No</th>
-                <th style="width: 100px;">Risk</th>
-                <th style="width: 120px;">Host IP</th>
-                <th>Vulnerability Name</th>
-                <th>Fix Recommendation</th>
+                <td>${index + 1}</td>
+                <td style="font-family: monospace;">${vuln.cve_id || 'N/A'}</td>
+                <td><span style="${getSeverityStyle(vuln.severity)}">${vuln.severity.charAt(0).toUpperCase() + vuln.severity.slice(1)}</span></td>
+                <td style="font-family: monospace;">${vuln.host_ip}</td>
+                <td>${vuln.vulnerability_name}</td>
+                <td>${vuln.fix_recommendation || vuln.solution || 'See detailed description'}</td>
               </tr>
-            </thead>
-            <tbody>
-              ${vulnerabilities
-                .filter((v) => !v.is_zero_day)
-                .map(
-                  (vuln, index) => `
-                <tr>
-                  <td>${index + 1}</td>
-                  <td><span style="${getSeverityStyle(vuln.severity)}">${
-                    vuln.severity.charAt(0).toUpperCase() +
-                    vuln.severity.slice(1)
-                  }</span></td>
-                  <td style="font-family: monospace;">${vuln.host_ip}</td>
-                  <td>${vuln.vulnerability_name}</td>
-                  <td>${
-                    vuln.fix_recommendation ||
-                    vuln.solution ||
-                    "See detailed description"
-                  }</td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
-        </div>
-
-        <!-- CONCLUSION -->
-        <div class="section page-break">
-          <h1>Conclusion</h1>
-          <div style="font-size: 16px; line-height: 1.7; space-y: 20px;">
-            <p style="margin-bottom: 20px;">
-              The vulnerability assessment of <strong>${
-                report.org_name
-              }</strong> has identified <strong>${
-    report.total_vulnerabilities
-  }</strong> vulnerabilities 
-              across <strong>${
-                report.total_ips_tested
-              }</strong> tested systems. The findings reveal a mix of security issues ranging from 
-              critical vulnerabilities requiring immediate attention to informational findings that provide security insights.
-            </p>
-            
-            <p style="margin-bottom: 20px;">
-              We strongly recommend prioritizing the remediation of <strong>${
-                report.critical_count
-              } critical</strong> and <strong>${
-    report.high_count
-  } high-severity</strong> vulnerabilities 
-              as they pose the most significant risk to the organization&apos;s security posture. The <strong>${
-                report.medium_count
-              } medium-severity</strong> vulnerabilities 
-              should be addressed in the next maintenance cycle, while low-severity issues can be scheduled for routine maintenance.
-            </p>
-            
-            ${
-              report.zero_day_count > 0
-                ? `
-            <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; border: 2px solid #fecaca; margin: 20px 0;">
-              <p style="margin: 0; font-weight: bold;">
-                <strong>Critical Notice:</strong> This assessment identified <strong>${report.zero_day_count} zero-day vulnerabilities</strong> that require 
-                immediate attention due to their recent disclosure and potential for exploitation.
-              </p>
-            </div>
             `
-                : ""
-            }
-            
-            <p style="margin-bottom: 20px;">
-              Following the remediation efforts, we recommend conducting a follow-up assessment to verify that vulnerabilities have been 
-              properly addressed and that no new security issues have been introduced during the remediation process.
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+      ` : ''}
+
+      <!-- VULNERABILITIES WITH REMEDIATION -->
+      <div class="section page-break">
+        <h1>5. Vulnerabilities finding with Remediation</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>S No</th>
+              <th>Risk</th>
+              <th>Host</th>
+              <th>Name</th>
+              <th>Solution</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${vulnerabilities
+              .filter((v) => !v.is_zero_day)
+              .map(
+                (vuln, index) => `
+              <tr>
+                <td>${index + 1}</td>
+                <td><span style="${getSeverityStyle(vuln.severity)}">${
+                  vuln.severity.charAt(0).toUpperCase() +
+                  vuln.severity.slice(1)
+                }</span></td>
+                <td style="font-family: monospace;">${vuln.host_ip}</td>
+                <td>${vuln.vulnerability_name}</td>
+                <td>${
+                  vuln.fix_recommendation ||
+                  vuln.solution ||
+                  "See detailed description"
+                }</td>
+              </tr>
+            `
+              )
+              .join("")}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- CONCLUSION -->
+      <div class="section page-break">
+        <h1>6. Conclusion</h1>
+        <div style="font-size: 16px; line-height: 1.7; space-y: 20px;">
+          <p style="margin-bottom: 20px;">
+            Nevertheless, we suggest that IP's allocated to <strong>${report.org_name}</strong>, implement the recommendations in this document with respect to the affected servers and devices. We also propose to follow-on retest to verify that the recommended changes were made and made correctly. Please note that as technologies and risks change over time, the vulnerabilities associated with the operation of the systems described in this report, as well as the actions necessary to reduce the exposure to such vulnerabilities, will also change.
+          </p>
+          
+          <p style="margin-bottom: 20px;">
+            The vulnerability assessment of <strong>${report.org_name}</strong> has identified <strong>${report.total_vulnerabilities}</strong> vulnerabilities 
+            across <strong>${report.total_ips_tested}</strong> tested systems. The findings reveal a mix of security issues ranging from 
+            critical vulnerabilities requiring immediate attention to informational findings that provide security insights.
+          </p>
+          
+          <p style="margin-bottom: 20px;">
+            We strongly recommend prioritizing the remediation of <strong>${report.critical_count} critical</strong> and <strong>${report.high_count} high-severity</strong> vulnerabilities 
+            as they pose the most significant risk to the organization's security posture. The <strong>${report.medium_count} medium-severity</strong> vulnerabilities 
+            should be addressed in the next maintenance cycle, while low-severity issues can be scheduled for routine maintenance.
+          </p>
+          
+          ${report.zero_day_count > 0 ? `
+          <div style="background-color: #fef2f2; padding: 20px; border-radius: 8px; border: 2px solid #fecaca; margin: 20px 0;">
+            <p style="margin: 0; font-weight: bold;">
+              <strong>Critical Notice:</strong> This assessment identified <strong>${report.zero_day_count} zero-day vulnerabilities</strong> that require 
+              immediate attention due to their recent disclosure and potential for exploitation.
             </p>
-            
-            <p style="margin-bottom: 20px;">
-              The cybersecurity landscape continues to evolve rapidly, with new threats and vulnerabilities emerging regularly. We recommend 
-              implementing a continuous vulnerability management program that includes regular scanning, timely patching procedures, and 
-              security awareness training for all personnel.
-            </p>
+          </div>
+          ` : ""}
+          
+          <p style="margin-bottom: 20px;">
+            Following the remediation efforts, we recommend conducting a follow-up assessment to verify that vulnerabilities have been 
+            properly addressed and that no new security issues have been introduced during the remediation process.
+          </p>
+          
+          <p style="margin-bottom: 20px;">
+            The cybersecurity landscape continues to evolve rapidly, with new threats and vulnerabilities emerging regularly. We recommend 
+            implementing a continuous vulnerability management program that includes regular scanning, timely patching procedures, and 
+            security awareness training for all personnel.
+          </p>
+          
+          <div style="text-align: center; margin-top: 40px; padding-top: 20px; border-top: 2px solid #e5e7eb;">
+            <p style="font-weight: bold; font-size: 18px;">------END OF THE DOCUMENT----</p>
           </div>
         </div>
       </div>
     </body>
     </html>
   `;
-}
-
-function getMethodologyDescription(step: string): string {
-  const descriptions: Record<string, string> = {
-    "Asset Selection":
-      "Identified and catalogued all systems within the defined scope for vulnerability assessment.",
-    "Reachability checks":
-      "Verified network connectivity and accessibility of target systems prior to scanning.",
-    "Informed initiation":
-      "Coordinated with system administrators and stakeholders before commencing security testing.",
-    "Tool execution":
-      "Conducted comprehensive vulnerability scans using Nessus and other security assessment tools.",
-    "Consolidation & Validation":
-      "Aggregated scan results and manually verified findings to reduce false positives.",
-    "Severity Reclassification (if any)":
-      "Reviewed and adjusted vulnerability severity ratings based on environmental context.",
-    Reporting:
-      "Compiled findings into this comprehensive report with detailed remediation guidance.",
-    "Secure Sharing":
-      "Delivered the final report through secure channels to authorized personnel only.",
-  };
-  return descriptions[step] || "Standard security assessment procedure.";
 }
