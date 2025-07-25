@@ -98,16 +98,29 @@ export async function GET(
       .from("vulnerabilities")
       .select("*")
       .eq("report_id", reportId)
-      .order("severity", { ascending: false })
       .order("host_ip", { ascending: true });
 
-    const zeroDayVulns = vulnerabilities?.filter((v) => v.is_zero_day) || [];
+    // Sort vulnerabilities by severity priority: critical, high, medium, low, info
+    const sortedVulnerabilities = vulnerabilities?.sort((a, b) => {
+      const severityOrder = { 'critical': 1, 'high': 2, 'medium': 3, 'low': 4, 'informational': 5 }
+      const aOrder = severityOrder[a.severity as keyof typeof severityOrder] || 6
+      const bOrder = severityOrder[b.severity as keyof typeof severityOrder] || 6
+      
+      if (aOrder !== bOrder) {
+        return aOrder - bOrder
+      }
+      
+      // If same severity, sort by host IP
+      return a.host_ip.localeCompare(b.host_ip)
+    }) || []
+
+    const zeroDayVulns = sortedVulnerabilities?.filter((v) => v.is_zero_day) || [];
 
     // Generate HTML content
     const htmlContent = generateEnhancedReportHTML(
       report,
       hosts || [],
-      vulnerabilities || [],
+      sortedVulnerabilities || [],
       zeroDayVulns
     );
 
@@ -1532,6 +1545,12 @@ function generateEnhancedReportHTML(
                 <td class="${getSeverityStyle("Low")}">${"Low"}</td>
                 <td class="number-cell low-number" style="text-align: center; font-size: 14px;">${
                   report.low_count
+                }</td>
+              </tr>
+              <tr>
+                <td class="${getSeverityStyle("Informational")}">${"Informational"}</td>
+                <td class="number-cell info-number" style="text-align: center; font-size: 14px;">${
+                  report.info_count
                 }</td>
               </tr>
               <tr class="total-row">

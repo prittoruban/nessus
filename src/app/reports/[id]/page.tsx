@@ -142,14 +142,28 @@ export default function ReportPage() {
         .from('vulnerabilities')
         .select('*')
         .eq('report_id', reportId)
-        .order('severity', { ascending: false })
         .order('host_ip')
 
       if (vulnsError) throw vulnsError
-      setVulnerabilities(vulnsData || [])
+      
+      // Sort vulnerabilities by severity priority: critical, high, medium, low, info
+      const sortedVulns = vulnsData?.sort((a, b) => {
+        const severityOrder = { 'critical': 1, 'high': 2, 'medium': 3, 'low': 4, 'informational': 5 }
+        const aOrder = severityOrder[a.severity as keyof typeof severityOrder] || 6
+        const bOrder = severityOrder[b.severity as keyof typeof severityOrder] || 6
+        
+        if (aOrder !== bOrder) {
+          return aOrder - bOrder
+        }
+        
+        // If same severity, sort by host IP
+        return a.host_ip.localeCompare(b.host_ip)
+      }) || []
+      
+      setVulnerabilities(sortedVulns)
 
-      // Filter zero-day vulnerabilities
-      const zeroDays = vulnsData?.filter(v => v.is_zero_day) || []
+      // Filter and sort zero-day vulnerabilities
+      const zeroDays = sortedVulns?.filter(v => v.is_zero_day) || []
       setZeroDayVulns(zeroDays)
 
     } catch (err) {
@@ -509,13 +523,14 @@ export default function ReportPage() {
                 <BugAntIcon className="w-6 h-6 text-orange-600 mr-3" />
                 Vulnerability Overview
               </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4">
                 {[
                   { label: 'Total', count: report.total_vulnerabilities, color: 'bg-gray-100 text-gray-800', icon: BugAntIcon },
                   { label: 'Critical', count: report.critical_count, color: 'bg-red-100 text-red-800', icon: FireIconSolid },
                   { label: 'High', count: report.high_count, color: 'bg-orange-100 text-orange-800', icon: ExclamationTriangleIcon },
                   { label: 'Medium', count: report.medium_count, color: 'bg-yellow-100 text-yellow-800', icon: ExclamationTriangleIcon },
-                  { label: 'Low', count: report.low_count, color: 'bg-blue-100 text-blue-800', icon: InformationCircleIcon }
+                  { label: 'Low', count: report.low_count, color: 'bg-blue-100 text-blue-800', icon: InformationCircleIcon },
+                  { label: 'Info', count: report.info_count, color: 'bg-gray-100 text-gray-800', icon: InformationCircleIcon }
                 ].map((item, index) => (
                   <div key={index} className="bg-white rounded-lg border border-gray-200 p-4 text-center">
                     <item.icon className="w-8 h-8 mx-auto mb-2 text-gray-600" />
@@ -856,13 +871,13 @@ export default function ReportPage() {
                 Detailed Zero-Day Vulnerabilities
               </h3>
               <div className="bg-white rounded-xl border border-red-200 overflow-hidden">
-                <table className="w-full">
+                <table className="w-full table-auto">
                   <thead className="bg-red-100">
                     <tr>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800">S.No</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800">CVE ID</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800">Risk</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800">Host IP</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800 w-16">S.No</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800 w-32">CVE ID</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800 w-24">Risk</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-red-800 w-32">Host IP</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-red-800">Name</th>
                       <th className="px-4 py-3 text-left text-sm font-semibold text-red-800">Fix</th>
                     </tr>
@@ -882,8 +897,8 @@ export default function ReportPage() {
                           </span>
                         </td>
                         <td className="px-4 py-3 font-mono text-sm font-medium text-gray-900">{vuln.host_ip}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{vuln.vulnerability_name}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700 max-w-xs truncate">{vuln.fix_recommendation || vuln.solution || 'Update to latest version'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{vuln.vulnerability_name}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{vuln.fix_recommendation || vuln.solution || 'Update to latest version'}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -904,12 +919,12 @@ export default function ReportPage() {
           
           <div className="overflow-x-auto">
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full">
+              <table className="w-full table-auto">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">S.No</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Risk</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Host IP</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-16">S.No</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-24">Risk</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 w-32">Host IP</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Vulnerability Name</th>
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Fix Recommendation</th>
                   </tr>
@@ -930,15 +945,11 @@ export default function ReportPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 font-mono text-sm font-medium text-gray-900">{vuln.host_ip}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
-                        <div className="truncate" title={vuln.vulnerability_name}>
-                          {vuln.vulnerability_name}
-                        </div>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {vuln.vulnerability_name}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 max-w-md">
-                        <div className="line-clamp-2">
-                          {vuln.fix_recommendation || vuln.solution || 'See detailed description'}
-                        </div>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        {vuln.fix_recommendation || vuln.solution || 'See detailed description'}
                       </td>
                     </tr>
                   ))}
