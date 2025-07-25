@@ -446,30 +446,42 @@ export default function OverviewPage() {
         high_count: number;
         medium_count: number;
       }) => {
-        const criticalVulns = report.critical_count
-        const highVulns = report.high_count
-        const mediumVulns = report.medium_count
-        
+        const criticalVulns = report.critical_count;
+        const highVulns = report.high_count;
+        const mediumVulns = report.medium_count;
+
         // CIS Controls v8 - Focus on basic cyber hygiene
-        const cisScore = Math.max(10, Math.min(100, 
-          100 - (criticalVulns * 8) - (highVulns * 4) - (mediumVulns * 1.5)
-        ))
-        const cisPassed = Math.floor((cisScore / 100) * 20)
-        const cisFailed = 20 - cisPassed
+        const cisScore = Math.max(
+          10,
+          Math.min(
+            100,
+            100 - criticalVulns * 8 - highVulns * 4 - mediumVulns * 1.5
+          )
+        );
+        const cisPassed = Math.floor((cisScore / 100) * 20);
+        const cisFailed = 20 - cisPassed;
 
         // NIST Cybersecurity Framework - More comprehensive
-        const nistScore = Math.max(15, Math.min(100,
-          100 - (criticalVulns * 6) - (highVulns * 3.5) - (mediumVulns * 1.2)
-        ))
-        const nistPassed = Math.floor((nistScore / 100) * 23)
-        const nistFailed = 23 - nistPassed
+        const nistScore = Math.max(
+          15,
+          Math.min(
+            100,
+            100 - criticalVulns * 6 - highVulns * 3.5 - mediumVulns * 1.2
+          )
+        );
+        const nistPassed = Math.floor((nistScore / 100) * 23);
+        const nistFailed = 23 - nistPassed;
 
         // ISO 27001 - Information security management
-        const isoScore = Math.max(20, Math.min(100,
-          100 - (criticalVulns * 4) - (highVulns * 2.5) - (mediumVulns * 1)
-        ))
-        const isoPassed = Math.floor((isoScore / 100) * 114)
-        const isoFailed = 114 - isoPassed
+        const isoScore = Math.max(
+          20,
+          Math.min(
+            100,
+            100 - criticalVulns * 4 - highVulns * 2.5 - mediumVulns * 1
+          )
+        );
+        const isoPassed = Math.floor((isoScore / 100) * 114);
+        const isoFailed = 114 - isoPassed;
 
         return [
           {
@@ -478,7 +490,7 @@ export default function OverviewPage() {
             passed: cisPassed,
             failed: cisFailed,
             total: 20,
-            description: "Essential cyber security controls"
+            description: "Essential cyber security controls",
           },
           {
             framework: "NIST Cybersecurity Framework",
@@ -486,7 +498,7 @@ export default function OverviewPage() {
             passed: nistPassed,
             failed: nistFailed,
             total: 23,
-            description: "Comprehensive cybersecurity framework"
+            description: "Comprehensive cybersecurity framework",
           },
           {
             framework: "ISO 27001:2022",
@@ -494,10 +506,10 @@ export default function OverviewPage() {
             passed: isoPassed,
             failed: isoFailed,
             total: 114,
-            description: "Information security management standard"
-          }
-        ]
-      }
+            description: "Information security management standard",
+          },
+        ];
+      };
 
       const complianceData = calculateComplianceScore(currentReport);
 
@@ -746,17 +758,17 @@ export default function OverviewPage() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header with enhanced controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between space-y-4 lg:space-y-0">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">
+        <div className="flex flex-col space-y-4 lg:flex-row lg:items-center lg:justify-between lg:space-y-0">
+          <div className="text-center lg:text-left">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
               Executive Overview
             </h1>
-            <p className="text-gray-600 mt-1">
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
               Comprehensive security posture analysis and executive insights
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center space-x-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+            <div className="flex-1 sm:flex-none">
               <select
                 value={viewMode}
                 onChange={(e) =>
@@ -768,7 +780,7 @@ export default function OverviewPage() {
                       | "executive"
                   )
                 }
-                className="border border-gray-300 rounded-md px-3 py-2 text-sm"
+                className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="charts">Charts View</option>
                 <option value="detailed">Detailed Analysis</option>
@@ -778,7 +790,7 @@ export default function OverviewPage() {
             </div>
             <button
               onClick={fetchOrganizations}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
             >
               <ArrowPathIcon className="h-4 w-4 mr-2" />
               Refresh
@@ -787,12 +799,12 @@ export default function OverviewPage() {
         </div>
 
         {/* Organization Selection */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
           {/* Internal Organizations */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 lg:p-6">
             <div className="flex items-center mb-4">
-              <ComputerDesktopIcon className="h-6 w-6 text-blue-600 mr-3" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <ComputerDesktopIcon className="h-5 w-5 lg:h-6 lg:w-6 text-blue-600 mr-3" />
+              <h2 className="text-base lg:text-lg font-semibold text-gray-900">
                 Internal Organizations ({organizations.internal.length})
               </h2>
             </div>
@@ -801,73 +813,83 @@ export default function OverviewPage() {
                 <div
                   key={org.id}
                   onClick={() => handleOrgSelect(org)}
-                  className={`p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
+                  className={`p-3 lg:p-4 rounded-lg border cursor-pointer transition-all hover:shadow-md ${
                     selectedOrg?.id === org.id
                       ? "border-blue-500 bg-blue-50"
                       : "border-gray-200 hover:border-gray-300"
                   }`}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <h3 className="font-medium text-gray-900">
-                          {org.name}
-                        </h3>
-                        {org.compliance_status && (
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              org.compliance_status === "compliant"
-                                ? "bg-green-100 text-green-800"
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+                          <h3 className="font-medium text-gray-900 truncate">
+                            {org.name}
+                          </h3>
+                          {org.compliance_status && (
+                            <span
+                              className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium shrink-0 ${
+                                org.compliance_status === "compliant"
+                                  ? "bg-green-100 text-green-800"
+                                  : org.compliance_status === "partial"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {org.compliance_status === "compliant"
+                                ? "✓ Compliant"
                                 : org.compliance_status === "partial"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {org.compliance_status === "compliant"
-                              ? "✓ Compliant"
-                              : org.compliance_status === "partial"
-                              ? "⚠ Partial"
-                              : "✗ Non-compliant"}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
-                        <span>{org.total_ips} IPs scanned</span>
-                        <span>{org.total_vulnerabilities} vulnerabilities</span>
-                        <span>{org.report_count} reports</span>
-                        {org.risk_score !== undefined && (
-                          <span
-                            className={`font-medium ${
-                              org.risk_score > 70
-                                ? "text-red-600"
-                                : org.risk_score > 40
-                                ? "text-yellow-600"
-                                : "text-green-600"
-                            }`}
-                          >
-                            Risk: {org.risk_score}%
-                          </span>
-                        )}
-                      </div>
-                      {org.latest_scan && (
-                        <div className="flex items-center mt-1 text-xs text-gray-400">
-                          <CalendarIcon className="h-3 w-3 mr-1" />
-                          Last scan:{" "}
-                          {new Date(org.latest_scan).toLocaleDateString()}
+                                ? "⚠ Partial"
+                                : "✗ Non-compliant"}
+                            </span>
+                          )}
                         </div>
-                      )}
+                        <div className="grid grid-cols-2 sm:flex sm:items-center sm:space-x-4 gap-1 sm:gap-0 mt-1 text-xs sm:text-sm text-gray-500">
+                          <span className="truncate">
+                            {org.total_ips} IPs scanned
+                          </span>
+                          <span className="truncate">
+                            {org.total_vulnerabilities} vulnerabilities
+                          </span>
+                          <span className="truncate">
+                            {org.report_count} reports
+                          </span>
+                          {org.risk_score !== undefined && (
+                            <span
+                              className={`font-medium truncate ${
+                                org.risk_score > 70
+                                  ? "text-red-600"
+                                  : org.risk_score > 40
+                                  ? "text-yellow-600"
+                                  : "text-green-600"
+                              }`}
+                            >
+                              Risk: {org.risk_score}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="flex flex-col items-end space-y-2">
-                      {org.critical_count > 0 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                          {org.critical_count} Critical
-                        </span>
-                      )}
-                      {org.high_count > 0 && org.critical_count === 0 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                          {org.high_count} High
-                        </span>
-                      )}
+                    {org.latest_scan && (
+                      <div className="flex items-center text-xs text-gray-400">
+                        <CalendarIcon className="h-3 w-3 mr-1" />
+                        Last scan:{" "}
+                        {new Date(org.latest_scan).toLocaleDateString()}
+                      </div>
+                    )}
+                    <div className="flex justify-between items-center">
+                      <div className="flex space-x-2">
+                        {org.critical_count > 0 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            {org.critical_count} Critical
+                          </span>
+                        )}
+                        {org.high_count > 0 && org.critical_count === 0 && (
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            {org.high_count} High
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -876,10 +898,10 @@ export default function OverviewPage() {
           </div>
 
           {/* External Organizations */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="bg-white rounded-lg border border-gray-200 p-4 lg:p-6">
             <div className="flex items-center mb-4">
-              <GlobeAltIcon className="h-6 w-6 text-green-600 mr-3" />
-              <h2 className="text-lg font-semibold text-gray-900">
+              <GlobeAltIcon className="h-5 w-5 lg:h-6 lg:w-6 text-green-600 mr-3" />
+              <h2 className="text-base lg:text-lg font-semibold text-gray-900">
                 External Organizations ({organizations.external.length})
               </h2>
             </div>
@@ -996,18 +1018,20 @@ export default function OverviewPage() {
               ) : (
                 <>
                   {/* Key Metrics */}
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">
+                  <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg sm:text-2xl font-bold text-gray-900">
                         {selectedOrg.total_ips}
                       </div>
-                      <div className="text-sm text-gray-600">IPs Scanned</div>
+                      <div className="text-xs sm:text-sm text-gray-600">
+                        IPs Scanned
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-center p-3 bg-gray-50 rounded-lg">
+                      <div className="text-lg sm:text-2xl font-bold text-gray-900">
                         {selectedOrg.total_vulnerabilities}
                       </div>
-                      <div className="text-sm text-gray-600">
+                      <div className="text-xs sm:text-sm text-gray-600">
                         Total Vulnerabilities
                       </div>
                       {overviewStats.previousIteration && (
@@ -1045,11 +1069,13 @@ export default function OverviewPage() {
                         </div>
                       )}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-red-600">
+                    <div className="text-center p-3 bg-red-50 rounded-lg">
+                      <div className="text-lg sm:text-2xl font-bold text-red-600">
                         {selectedOrg.critical_count}
                       </div>
-                      <div className="text-sm text-gray-600">Critical</div>
+                      <div className="text-xs sm:text-sm text-gray-600">
+                        Critical
+                      </div>
                       {overviewStats.previousIteration && (
                         <div className="flex items-center justify-center mt-1">
                           {selectedOrg.critical_count >
@@ -1080,11 +1106,13 @@ export default function OverviewPage() {
                         </div>
                       )}
                     </div>
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-orange-600">
+                    <div className="text-center p-3 bg-orange-50 rounded-lg">
+                      <div className="text-lg sm:text-2xl font-bold text-orange-600">
                         {selectedOrg.high_count}
                       </div>
-                      <div className="text-sm text-gray-600">High</div>
+                      <div className="text-xs sm:text-sm text-gray-600">
+                        High
+                      </div>
                       {overviewStats.previousIteration && (
                         <div className="flex items-center justify-center mt-1">
                           {selectedOrg.high_count >
@@ -1280,8 +1308,10 @@ export default function OverviewPage() {
                         </h4>
                         <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
                           <p className="text-sm text-amber-800">
-                            <strong>Note:</strong> Compliance scores are estimated based on vulnerability risk analysis. 
-                            Formal compliance certification requires official audits.
+                            <strong>Note:</strong> Compliance scores are
+                            estimated based on vulnerability risk analysis.
+                            Formal compliance certification requires official
+                            audits.
                           </p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1320,15 +1350,15 @@ export default function OverviewPage() {
                     </div>
                   ) : viewMode === "compliance" ? (
                     /* Compliance Analysis View */
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4 lg:space-y-6">
+                      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
                         {/* Compliance Scores Chart */}
                         {complianceChartData && (
-                          <div className="bg-white rounded-lg border p-6">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                          <div className="bg-white rounded-lg border p-4 lg:p-6">
+                            <h4 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
                               Compliance Scores
                             </h4>
-                            <div className="h-64">
+                            <div className="h-48 sm:h-64">
                               <Bar
                                 data={complianceChartData}
                                 options={{
@@ -1353,11 +1383,11 @@ export default function OverviewPage() {
 
                         {/* Top Vulnerabilities */}
                         {topVulnChartData && (
-                          <div className="bg-white rounded-lg border p-6">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                          <div className="bg-white rounded-lg border p-4 lg:p-6">
+                            <h4 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
                               Most Common Vulnerabilities
                             </h4>
-                            <div className="h-64">
+                            <div className="h-48 sm:h-64">
                               <Bar
                                 data={topVulnChartData}
                                 options={{
@@ -1377,95 +1407,109 @@ export default function OverviewPage() {
                       </div>
 
                       {/* Detailed Compliance Table */}
-                      <div className="bg-white rounded-lg border p-6">
-                        <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      <div className="bg-white rounded-lg border p-4 lg:p-6">
+                        <h4 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
                           Detailed Compliance Analysis
                         </h4>
-                        <div className="overflow-x-auto">
-                          <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                              <tr>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Framework
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Score
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Passed
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Failed
-                                </th>
-                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                  Status
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                              {overviewStats.complianceData.map(
-                                (framework, index) => (
-                                  <tr key={index}>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                      {framework.framework}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                      <div className="flex items-center">
-                                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-3">
-                                          <div
-                                            className={`h-2 rounded-full ${
-                                              framework.score >= 80
-                                                ? "bg-green-500"
-                                                : framework.score >= 60
-                                                ? "bg-yellow-500"
-                                                : "bg-red-500"
-                                            }`}
-                                            style={{
-                                              width: `${framework.score}%`,
-                                            }}
-                                          ></div>
-                                        </div>
-                                        <span className="font-medium">
-                                          {framework.score}%
-                                        </span>
-                                      </div>
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600">
-                                      {framework.passed}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                                      {framework.failed}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap">
-                                      <span
-                                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                          framework.score >= 80
-                                            ? "bg-green-100 text-green-800"
-                                            : framework.score >= 60
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : "bg-red-100 text-red-800"
-                                        }`}
-                                      >
-                                        {framework.score >= 80
-                                          ? "Compliant"
-                                          : framework.score >= 60
-                                          ? "Partial"
-                                          : "Non-compliant"}
-                                      </span>
-                                    </td>
+                        <div className="overflow-x-auto -mx-4 lg:mx-0">
+                          <div className="min-w-full inline-block align-middle">
+                            <div className="overflow-hidden border border-gray-200 md:rounded-lg">
+                              <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Framework
+                                    </th>
+                                    <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Score
+                                    </th>
+                                    <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                      Passed
+                                    </th>
+                                    <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                      Failed
+                                    </th>
+                                    <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Status
+                                    </th>
                                   </tr>
-                                )
-                              )}
-                            </tbody>
-                          </table>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                  {overviewStats.complianceData.map(
+                                    (framework, index) => (
+                                      <tr key={index}>
+                                        <td className="px-3 lg:px-6 py-4 text-sm font-medium text-gray-900">
+                                          <div className="truncate max-w-[120px] sm:max-w-none">
+                                            {framework.framework}
+                                          </div>
+                                        </td>
+                                        <td className="px-3 lg:px-6 py-4 text-sm text-gray-900">
+                                          <div className="flex items-center">
+                                            <div className="w-12 sm:w-16 bg-gray-200 rounded-full h-2 mr-2 sm:mr-3">
+                                              <div
+                                                className={`h-2 rounded-full ${
+                                                  framework.score >= 80
+                                                    ? "bg-green-500"
+                                                    : framework.score >= 60
+                                                    ? "bg-yellow-500"
+                                                    : "bg-red-500"
+                                                }`}
+                                                style={{
+                                                  width: `${framework.score}%`,
+                                                }}
+                                              ></div>
+                                            </div>
+                                            <span className="font-medium text-xs sm:text-sm">
+                                              {framework.score}%
+                                            </span>
+                                          </div>
+                                        </td>
+                                        <td className="px-3 lg:px-6 py-4 text-sm text-green-600 hidden sm:table-cell">
+                                          {framework.passed}
+                                        </td>
+                                        <td className="px-3 lg:px-6 py-4 text-sm text-red-600 hidden sm:table-cell">
+                                          {framework.failed}
+                                        </td>
+                                        <td className="px-3 lg:px-6 py-4">
+                                          <span
+                                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                                              framework.score >= 80
+                                                ? "bg-green-100 text-green-800"
+                                                : framework.score >= 60
+                                                ? "bg-yellow-100 text-yellow-800"
+                                                : "bg-red-100 text-red-800"
+                                            }`}
+                                          >
+                                            {framework.score >= 80
+                                              ? "Compliant"
+                                              : framework.score >= 60
+                                              ? "Partial"
+                                              : "Non-compliant"}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                    )
+                                  )}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
                         </div>
-                        
+
                         {/* Compliance Assessment Disclaimer */}
                         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
                           <div className="flex items-start">
                             <div className="flex-shrink-0">
-                              <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                              <svg
+                                className="h-5 w-5 text-blue-400"
+                                viewBox="0 0 20 20"
+                                fill="currentColor"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             </div>
                             <div className="ml-3">
@@ -1474,13 +1518,29 @@ export default function OverviewPage() {
                               </h3>
                               <div className="mt-2 text-sm text-blue-700">
                                 <p className="mb-2">
-                                  <strong>These scores are risk-based estimates</strong> derived from vulnerability analysis, not formal compliance audits.
+                                  <strong>
+                                    These scores are risk-based estimates
+                                  </strong>{" "}
+                                  derived from vulnerability analysis, not
+                                  formal compliance audits.
                                 </p>
                                 <ul className="list-disc list-inside space-y-1">
-                                  <li>Calculations map vulnerability severity to framework control areas</li>
-                                  <li>Actual compliance requires formal audits by certified assessors</li>
-                                  <li>Use these metrics as security posture indicators, not compliance certification</li>
-                                  <li>Critical and high vulnerabilities significantly impact compliance scores</li>
+                                  <li>
+                                    Calculations map vulnerability severity to
+                                    framework control areas
+                                  </li>
+                                  <li>
+                                    Actual compliance requires formal audits by
+                                    certified assessors
+                                  </li>
+                                  <li>
+                                    Use these metrics as security posture
+                                    indicators, not compliance certification
+                                  </li>
+                                  <li>
+                                    Critical and high vulnerabilities
+                                    significantly impact compliance scores
+                                  </li>
                                 </ul>
                               </div>
                             </div>
@@ -1489,14 +1549,14 @@ export default function OverviewPage() {
                       </div>
                     </div>
                   ) : viewMode === "charts" ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
                       {/* Severity Distribution Chart */}
                       {severityChartData && (
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        <div className="bg-white rounded-lg border p-4 lg:p-6">
+                          <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
                             Vulnerability Distribution
                           </h3>
-                          <div className="h-64">
+                          <div className="h-48 sm:h-64">
                             <Pie
                               data={severityChartData}
                               options={{
@@ -1505,6 +1565,12 @@ export default function OverviewPage() {
                                 plugins: {
                                   legend: {
                                     position: "bottom",
+                                    labels: {
+                                      boxWidth: 12,
+                                      font: {
+                                        size: 11,
+                                      },
+                                    },
                                   },
                                 },
                               }}
@@ -1515,11 +1581,11 @@ export default function OverviewPage() {
 
                       {/* Trend Chart */}
                       {trendChartData && (
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-900 mb-4">
+                        <div className="bg-white rounded-lg border p-4 lg:p-6">
+                          <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
                             Vulnerability Trends
                           </h3>
-                          <div className="h-64">
+                          <div className="h-48 sm:h-64">
                             <Line
                               data={trendChartData}
                               options={{
@@ -1543,93 +1609,103 @@ export default function OverviewPage() {
                     </div>
                   ) : (
                     /* Detailed IP Breakdown */
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-900 mb-4">
+                    <div className="bg-white rounded-lg border p-4 lg:p-6">
+                      <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
                         IP Address Breakdown
                       </h3>
-                      <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                          <thead className="bg-gray-50">
-                            <tr>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                IP Address
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Hostname
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Total
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Critical
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                High
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Medium
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Low
-                              </th>
-                              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Change
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {overviewStats.ipBreakdown.map((ip, index) => (
-                              <tr key={index} className="hover:bg-gray-50">
-                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {ip.ip_address}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                  {ip.hostname || "-"}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                  {ip.total_vulnerabilities}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                                  {ip.critical_count}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-orange-600">
-                                  {ip.high_count}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-yellow-600">
-                                  {ip.medium_count}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-blue-600">
-                                  {ip.low_count}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                  {ip.change !== undefined ? (
-                                    <div className="flex items-center">
-                                      {ip.change > 0 ? (
-                                        <ArrowTrendingUpIcon className="h-4 w-4 text-red-500 mr-1" />
-                                      ) : ip.change < 0 ? (
-                                        <ArrowTrendingDownIcon className="h-4 w-4 text-green-500 mr-1" />
-                                      ) : null}
-                                      <span
-                                        className={`${
-                                          ip.change > 0
-                                            ? "text-red-500"
-                                            : ip.change < 0
-                                            ? "text-green-500"
-                                            : "text-gray-500"
-                                        }`}
-                                      >
-                                        {ip.change > 0 ? "+" : ""}
-                                        {ip.change}
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <span className="text-gray-400">New</span>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                      <div className="overflow-x-auto -mx-4 lg:mx-0">
+                        <div className="min-w-full inline-block align-middle">
+                          <div className="overflow-hidden border border-gray-200 md:rounded-lg">
+                            <table className="min-w-full divide-y divide-gray-200">
+                              <thead className="bg-gray-50">
+                                <tr>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    IP Address
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
+                                    Hostname
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Total
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                                    Critical
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
+                                    High
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                    Medium
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
+                                    Low
+                                  </th>
+                                  <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Change
+                                  </th>
+                                </tr>
+                              </thead>
+                              <tbody className="bg-white divide-y divide-gray-200">
+                                {overviewStats.ipBreakdown.map((ip, index) => (
+                                  <tr key={index} className="hover:bg-gray-50">
+                                    <td className="px-3 lg:px-6 py-4 text-sm font-medium text-gray-900">
+                                      <div className="truncate max-w-[100px] sm:max-w-none">
+                                        {ip.ip_address}
+                                      </div>
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
+                                      <div className="truncate max-w-[120px] lg:max-w-none">
+                                        {ip.hostname || "-"}
+                                      </div>
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm text-gray-900">
+                                      {ip.total_vulnerabilities}
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm text-red-600 hidden md:table-cell">
+                                      {ip.critical_count}
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm text-orange-600 hidden md:table-cell">
+                                      {ip.high_count}
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm text-yellow-600 hidden lg:table-cell">
+                                      {ip.medium_count}
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm text-blue-600 hidden lg:table-cell">
+                                      {ip.low_count}
+                                    </td>
+                                    <td className="px-3 lg:px-6 py-4 text-sm">
+                                      {ip.change !== undefined ? (
+                                        <div className="flex items-center">
+                                          {ip.change > 0 ? (
+                                            <ArrowTrendingUpIcon className="h-4 w-4 text-red-500 mr-1" />
+                                          ) : ip.change < 0 ? (
+                                            <ArrowTrendingDownIcon className="h-4 w-4 text-green-500 mr-1" />
+                                          ) : null}
+                                          <span
+                                            className={`${
+                                              ip.change > 0
+                                                ? "text-red-500"
+                                                : ip.change < 0
+                                                ? "text-green-500"
+                                                : "text-gray-500"
+                                            }`}
+                                          >
+                                            {ip.change > 0 ? "+" : ""}
+                                            {ip.change}
+                                          </span>
+                                        </div>
+                                      ) : (
+                                        <span className="text-gray-400">
+                                          New
+                                        </span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   )}

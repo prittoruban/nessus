@@ -1,10 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --font-inter: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  --font-inter: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+    "Oxygen", "Ubuntu", "Cantarell", sans-serif;
 }
 
 /* Apply Inter font globally */
@@ -13,33 +14,89 @@
 }
 
 /* Professional typography scale */
-.text-display-2xl { font-size: 4.5rem; line-height: 1; letter-spacing: -0.02em; }
-.text-display-xl { font-size: 3.75rem; line-height: 1; letter-spacing: -0.02em; }
-.text-display-lg { font-size: 3rem; line-height: 1; letter-spacing: -0.02em; }
-.text-display-md { font-size: 2.25rem; line-height: 2.5rem; letter-spacing: -0.02em; }
-.text-display-sm { font-size: 1.875rem; line-height: 2.25rem; letter-spacing: -0.01em; }
-.text-display-xs { font-size: 1.5rem; line-height: 2rem; }
+.text-display-2xl {
+  font-size: 4.5rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.text-display-xl {
+  font-size: 3.75rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.text-display-lg {
+  font-size: 3rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+.text-display-md {
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  letter-spacing: -0.02em;
+}
+.text-display-sm {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  letter-spacing: -0.01em;
+}
+.text-display-xs {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
 
 /* Professional shadows */
-.shadow-xs { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-.shadow-sm { box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05); }
-.shadow-md { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
-.shadow-lg { box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
-.shadow-xl { box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); }
-.shadow-2xl { box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); }
+.shadow-xs {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+.shadow-md {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+.shadow-lg {
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+.shadow-xl {
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+.shadow-2xl {
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
 
 /* Professional color palette */
-.bg-primary-50 { background-color: #eff6ff; }
-.bg-primary-100 { background-color: #dbeafe; }
-.bg-primary-500 { background-color: #3b82f6; }
-.bg-primary-600 { background-color: #2563eb; }
-.bg-primary-700 { background-color: #1d4ed8; }
+.bg-primary-50 {
+  background-color: #eff6ff;
+}
+.bg-primary-100 {
+  background-color: #dbeafe;
+}
+.bg-primary-500 {
+  background-color: #3b82f6;
+}
+.bg-primary-600 {
+  background-color: #2563eb;
+}
+.bg-primary-700 {
+  background-color: #1d4ed8;
+}
 
-.text-primary-600 { color: #2563eb; }
-.text-primary-700 { color: #1d4ed8; }
+.text-primary-600 {
+  color: #2563eb;
+}
+.text-primary-700 {
+  color: #1d4ed8;
+}
 
-.border-primary-200 { border-color: #c7d2fe; }
-.border-primary-300 { border-color: #a5b4fc; }
+.border-primary-200 {
+  border-color: #c7d2fe;
+}
+.border-primary-300 {
+  border-color: #a5b4fc;
+}
 
 /* Custom animations and transitions */
 @keyframes shimmer {
@@ -74,7 +131,8 @@
 }
 
 @keyframes pulse-slow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {
@@ -84,7 +142,12 @@
 
 .animate-shimmer {
   animation: shimmer 2s infinite;
-  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(59, 130, 246, 0.1),
+    transparent
+  );
   background-size: 200px 100%;
 }
 
@@ -239,7 +302,8 @@ html {
 }
 
 .card-hover:hover {
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   border-color: #d1d5db;
 }
 
@@ -310,12 +374,24 @@ html {
 
 /* Responsive text sizes */
 @media (max-width: 640px) {
-  .text-display-2xl { font-size: 3rem; }
-  .text-display-xl { font-size: 2.5rem; }
-  .text-display-lg { font-size: 2rem; }
-  .text-display-md { font-size: 1.75rem; }
-  .text-display-sm { font-size: 1.5rem; }
-  .text-display-xs { font-size: 1.25rem; }
+  .text-display-2xl {
+    font-size: 3rem;
+  }
+  .text-display-xl {
+    font-size: 2.5rem;
+  }
+  .text-display-lg {
+    font-size: 2rem;
+  }
+  .text-display-md {
+    font-size: 1.75rem;
+  }
+  .text-display-sm {
+    font-size: 1.5rem;
+  }
+  .text-display-xs {
+    font-size: 1.25rem;
+  }
 }
 
 /* Back to Top Button Enhancements */
@@ -339,6 +415,51 @@ html {
     bottom: 1rem !important;
     right: 1rem !important;
     padding: 0.75rem !important;
+  }
+}
+
+/* Mobile-specific dashboard improvements */
+@media (max-width: 640px) {
+  /* Better text truncation on mobile */
+  .mobile-truncate {
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Smaller chart containers on mobile */
+  .mobile-chart {
+    height: 200px !important;
+  }
+
+  /* Compact organization cards */
+  .mobile-org-card {
+    padding: 0.75rem !important;
+  }
+
+  /* Better table spacing on mobile */
+  .mobile-table th,
+  .mobile-table td {
+    padding: 0.5rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* Responsive grid improvements */
+@media (max-width: 1024px) {
+  .lg-grid-responsive {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+}
+
+/* Touch-friendly button improvements */
+@media (hover: none) and (pointer: coarse) {
+  button,
+  .cursor-pointer {
+    min-height: 44px;
+    min-width: 44px;
   }
 }
 
