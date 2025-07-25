@@ -1,6 +1,7 @@
 'use client'
 
 import Sidebar from '@/components/Sidebar'
+import BackToTop from '@/components/BackToTop'
 
 interface AppLayoutProps {
   children: React.ReactNode
@@ -20,6 +21,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {children}
           </div>
         </div>
+        
+        {/* Back to Top Button */}
+        <BackToTop />
       </main>
     </div>
   )
