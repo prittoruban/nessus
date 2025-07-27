@@ -11,7 +11,9 @@ import {
   CalendarIcon,
   ChartBarIcon,
   ExclamationTriangleIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  DocumentTextIcon,
+  BuildingOfficeIcon
 } from '@heroicons/react/24/outline'
 
 interface Report {
@@ -280,7 +282,7 @@ export default function ReportsPage() {
           {/* Page Header */}
           <div className="border-b border-gray-200 pb-4">
             <div className="flex items-center space-x-3">
-              <ChartBarIcon className="w-8 h-8 text-blue-600" />
+              <DocumentTextIcon className="w-8 h-8 text-blue-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   Vulnerability Assessment Reports
@@ -296,7 +298,7 @@ export default function ReportsPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
-                <ChartBarIcon className="h-5 w-5 text-gray-400" />
+                <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
                 <div className="flex-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Search Organizations
@@ -336,7 +338,7 @@ export default function ReportsPage() {
             /* Search Prompt */
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-6">
-                <ChartBarIcon className="w-10 h-10 text-blue-600" />
+                <DocumentTextIcon className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Search for Reports
@@ -357,7 +359,7 @@ export default function ReportsPage() {
             /* Loading State */
             <div className="professional-card text-center py-16">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-6 shadow-lg shadow-blue-500/25 animate-pulse">
-                <ChartBarIcon className="w-8 h-8 text-white" />
+                <DocumentTextIcon className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 Searching Reports...
