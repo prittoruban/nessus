@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  HomeIcon,
   ArrowUpTrayIcon,
   DocumentTextIcon,
   ChartBarIcon,
@@ -14,7 +13,6 @@ import {
   ShieldCheckIcon
 } from '@heroicons/react/24/outline'
 import {
-  HomeIcon as HomeIconSolid,
   ArrowUpTrayIcon as ArrowUpTrayIconSolid,
   DocumentTextIcon as DocumentTextIconSolid,
   ChartBarIcon as ChartBarIconSolid,
@@ -37,13 +35,20 @@ interface NavItem {
 const navigationItems: NavItem[] = [
   {
     name: 'Dashboard',
-    icon: HomeIcon,
-    iconSolid: HomeIconSolid,
+    icon: PresentationChartLineIcon,
+    iconSolid: PresentationChartLineIconSolid,
     path: '/',
-    description: 'Overview & Analytics'
+    description: 'Executive overview & analytics'
   },
   {
-    name: 'Upload Scans',
+    name: 'Risk Insights',
+    icon: ChartBarIcon,
+    iconSolid: ChartBarIconSolid,
+    path: '/insights',
+    description: 'Vulnerability trends'
+  },
+  {
+    name: 'Quick Scan Upload',
     icon: ArrowUpTrayIcon,
     iconSolid: ArrowUpTrayIconSolid,
     path: '/upload',
@@ -56,20 +61,6 @@ const navigationItems: NavItem[] = [
     path: '/reports',
     description: 'Manage assessments',
     badge: 'New'
-  },
-  {
-    name: 'Risk Insights',
-    icon: ChartBarIcon,
-    iconSolid: ChartBarIconSolid,
-    path: '/insights',
-    description: 'Vulnerability trends'
-  },
-  {
-    name: 'Executive Summary',
-    icon: PresentationChartLineIcon,
-    iconSolid: PresentationChartLineIconSolid,
-    path: '/overview',
-    description: 'Leadership dashboard'
   }
 ]
 
