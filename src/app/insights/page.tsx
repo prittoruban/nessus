@@ -5,7 +5,6 @@ import { supabase } from "@/lib/supabase";
 import AppLayout from "@/components/AppLayout";
 import {
   ChartBarIcon,
-  FunnelIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   MinusIcon,
@@ -148,7 +147,7 @@ export default function RiskInsightsPage() {
     "all" | "internal" | "external"
   >("all");
   const [riskData, setRiskData] = useState<RiskInsightData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
   const [error, setError] = useState("");
   const [selectedHost, setSelectedHost] = useState<string | null>(null);
@@ -156,13 +155,11 @@ export default function RiskInsightsPage() {
     Vulnerability[]
   >([]);
   const [vulnLoading, setVulnLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<"table" | "charts">("table");
-  const [timeRange, setTimeRange] = useState<
-    "all" | "30days" | "90days" | "6months"
-  >("all");
+  const [viewMode, setViewMode] = useState<"table" | "charts">("charts");
   const [trendAnalysis, setTrendAnalysis] = useState<TrendAnalysis | null>(
     null
   );
+  const [searchTerm, setSearchTerm] = useState<string>("");
   const [chartData, setChartData] = useState<{
     vulnerabilityTrend: ChartData | null;
     severityDistribution: ChartData | null;
@@ -175,32 +172,76 @@ export default function RiskInsightsPage() {
     riskProgression: null,
   });
 
-  // Fetch organizations on component mount
-  useEffect(() => {
-    fetchOrganizations();
-  }, []);
+  // Don't fetch organizations automatically - only when user searches
+  // useEffect(() => {
+  //   fetchOrganizations();
+  // }, []);
 
-  const fetchOrganizations = async () => {
+  const fetchOrganizations = useCallback(async (searchQuery: string = "") => {
+    if (!searchQuery.trim()) {
+      setOrganizations([]);
+      return;
+    }
+
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      setError("");
+      
+      let query = supabase
         .from("organizations")
         .select("*")
         .order("name");
 
+      // Add search filter
+      if (searchQuery.trim()) {
+        query = query.ilike("name", `%${searchQuery}%`);
+      }
+
+      // Add source type filter if not 'all'
+      if (selectedSourceType !== "all") {
+        query = query.eq("source_type", selectedSourceType);
+      }
+
+      const { data, error } = await query;
+
       if (error) throw error;
       setOrganizations(data || []);
-
-      // Auto-select first organization if available
-      if (data && data.length > 0) {
-        setSelectedOrgId(data[0].id);
-      }
     } catch (err) {
       console.error("Error fetching organizations:", err);
       setError("Failed to fetch organizations");
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedSourceType]);
+
+  // Debounced search effect
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (searchTerm.trim()) {
+        fetchOrganizations(searchTerm);
+      } else {
+        setOrganizations([]);
+        setSelectedOrgId("");
+        setRiskData(null);
+      }
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, fetchOrganizations]);
+
+  // Re-fetch organizations when source type changes
+  useEffect(() => {
+    if (searchTerm.trim()) {
+      // Clear selected organization when source type changes
+      setSelectedOrgId("");
+      setRiskData(null);
+      
+      const timeoutId = setTimeout(() => {
+        fetchOrganizations(searchTerm);
+      }, 300);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [selectedSourceType, searchTerm, fetchOrganizations]);
 
   // Fetch risk data when organization or source type changes
   const fetchRiskInsights = useCallback(async () => {
@@ -242,27 +283,6 @@ export default function RiskInsightsPage() {
       // Apply source type filter if not 'all'
       if (selectedSourceType !== "all") {
         reportsQuery = reportsQuery.eq("source_type", selectedSourceType);
-      }
-
-      // Apply time range filter
-      if (timeRange !== "all") {
-        const now = new Date();
-        const cutoffDate = new Date();
-        switch (timeRange) {
-          case "30days":
-            cutoffDate.setDate(now.getDate() - 30);
-            break;
-          case "90days":
-            cutoffDate.setDate(now.getDate() - 90);
-            break;
-          case "6months":
-            cutoffDate.setMonth(now.getMonth() - 6);
-            break;
-        }
-        reportsQuery = reportsQuery.gte(
-          "scan_start_date",
-          cutoffDate.toISOString()
-        );
       }
 
       const { data: reportsData, error: reportsError } = await reportsQuery;
@@ -346,13 +366,13 @@ export default function RiskInsightsPage() {
     } finally {
       setDataLoading(false);
     }
-  }, [selectedOrgId, selectedSourceType, timeRange]);
+  }, [selectedOrgId, selectedSourceType]);
 
   useEffect(() => {
     if (selectedOrgId) {
       fetchRiskInsights();
     }
-  }, [selectedOrgId, selectedSourceType, timeRange, fetchRiskInsights]);
+  }, [selectedOrgId, selectedSourceType, fetchRiskInsights]);
 
   const generateChartData = (data: RiskInsightData) => {
     if (!data.hosts.length) {
@@ -711,195 +731,162 @@ export default function RiskInsightsPage() {
     return order[severity as keyof typeof order] ?? 5;
   };
 
-  if (loading) {
-    return (
-      <AppLayout>
-        <div className="flex items-center justify-center h-64">
-          <ArrowPathIcon className="h-8 w-8 animate-spin text-blue-600" />
-          <span className="ml-2 text-gray-600">Loading organizations...</span>
-        </div>
-      </AppLayout>
-    );
-  }
-
   return (
     <AppLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="border-b border-gray-200 pb-4">
-          <div className="flex items-center space-x-3">
-            <ChartBarIcon className="h-8 w-8 text-blue-600" />
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                Risk Insights
-              </h1>
-              <p className="text-gray-600">
-                Iteration-wise vulnerability analysis and trends
-              </p>
+      <div className="min-h-screen bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+          {/* Header */}
+          <div className="border-b border-gray-200 pb-4">
+            <div className="flex items-center space-x-3">
+              <ChartBarIcon className="h-8 w-8 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Risk Insights
+                </h1>
+                <p className="text-gray-600">
+                  Search for organizations to view vulnerability analysis and trends
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Filters */}
+        {/* Search */}
         <div className="bg-white rounded-lg border border-gray-200 p-4">
           <div className="space-y-4">
             <div className="flex items-center space-x-4">
-              <FunnelIcon className="h-5 w-5 text-gray-400" />
-              <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Organization
-                  </label>
-                  <select
-                    value={selectedOrgId}
-                    onChange={(e) => setSelectedOrgId(e.target.value)}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="">Select an organization</option>
-                    {organizations.map((org) => (
-                      <option key={org.id} value={org.id}>
-                        {org.name} ({org.source_type})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Source Type
-                  </label>
-                  <select
-                    value={selectedSourceType}
-                    onChange={(e) =>
-                      setSelectedSourceType(
-                        e.target.value as "all" | "internal" | "external"
-                      )
-                    }
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="all">All Sources</option>
-                    <option value="internal">Internal</option>
-                    <option value="external">External</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Time Range
-                  </label>
-                  <select
-                    value={timeRange}
-                    onChange={(e) =>
-                      setTimeRange(
-                        e.target.value as
-                          | "all"
-                          | "30days"
-                          | "90days"
-                          | "6months"
-                      )
-                    }
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="all">All Time</option>
-                    <option value="30days">Last 30 Days</option>
-                    <option value="90days">Last 90 Days</option>
-                    <option value="6months">Last 6 Months</option>
-                  </select>
-                </div>
+              <ChartBarIcon className="h-5 w-5 text-gray-400" />
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search Organizations
+                </label>
+                <input
+                  type="text"
+                  placeholder="Enter organization name to search..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                />
               </div>
             </div>
 
-            {/* View Mode Toggle */}
-            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-              <div className="flex items-center space-x-2">
-                <span className="text-sm font-medium text-gray-700">
-                  View Mode:
-                </span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                  <button
-                    onClick={() => setViewMode("table")}
-                    className={`px-3 py-1 text-sm font-medium ${
-                      viewMode === "table"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <TableCellsIcon className="h-4 w-4 inline mr-1" />
-                    Table
-                  </button>
-                  <button
-                    onClick={() => setViewMode("charts")}
-                    className={`px-3 py-1 text-sm font-medium ${
-                      viewMode === "charts"
-                        ? "bg-blue-500 text-white"
-                        : "bg-white text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <ChartPieIcon className="h-4 w-4 inline mr-1" />
-                    Charts
-                  </button>
-                </div>
+            {/* Assessment Type Filter - Only show when searching */}
+            {searchTerm.trim() && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Assessment Type
+                </label>
+                <select
+                  value={selectedSourceType}
+                  onChange={(e) =>
+                    setSelectedSourceType(
+                      e.target.value as "all" | "internal" | "external"
+                    )
+                  }
+                  className="w-full md:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                >
+                  <option value="all">All Assessment Types</option>
+                  <option value="internal">Internal Assessments</option>
+                  <option value="external">External Assessments</option>
+                </select>
               </div>
+            )}
 
-              {/* Trend Analysis Summary */}
-              {trendAnalysis && (
-                <div className="flex items-center space-x-6 text-sm">
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">Risk Score:</span>
-                    <span
-                      className={`font-semibold ${
-                        trendAnalysis.riskScore > 100
-                          ? "text-red-600"
-                          : trendAnalysis.riskScore > 50
-                          ? "text-yellow-600"
-                          : "text-green-600"
+            {/* Organization Results */}
+            {loading && searchTerm && (
+              <div className="flex items-center justify-center py-4">
+                <ArrowPathIcon className="h-5 w-5 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Searching organizations...</span>
+              </div>
+            )}
+
+            {organizations.length > 0 && searchTerm && (
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">
+                  Select Organization
+                </label>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {organizations.map((org) => (
+                    <button
+                      key={org.id}
+                      onClick={() => setSelectedOrgId(org.id)}
+                      className={`p-3 text-left rounded-lg border transition-colors ${
+                        selectedOrgId === org.id
+                          ? "border-blue-500 bg-blue-50 text-blue-900"
+                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                       }`}
                     >
-                      {trendAnalysis.riskScore}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">Critical Trend:</span>
-                    {trendAnalysis.criticalTrend === "up" && (
-                      <ArrowTrendingUpIcon className="h-4 w-4 text-red-500" />
-                    )}
-                    {trendAnalysis.criticalTrend === "down" && (
-                      <ArrowTrendingDownIcon className="h-4 w-4 text-green-500" />
-                    )}
-                    {trendAnalysis.criticalTrend === "stable" && (
-                      <MinusIcon className="h-4 w-4 text-gray-400" />
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-1">
-                    <span className="text-gray-600">Avg Vulns/Host:</span>
-                    <span className="font-medium">
-                      {trendAnalysis.averageVulnsPerHost}
-                    </span>
-                  </div>
+                      <div className="font-medium">{org.name}</div>
+                      <div className="text-sm text-gray-500 capitalize">
+                        {org.source_type} Assessment
+                      </div>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+
+            {searchTerm && organizations.length === 0 && !loading && (
+              <div className="text-center py-4 text-gray-500">
+                No organizations found matching &quot;{searchTerm}&quot;
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Error Display */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center">
-              <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
-              <span className="text-red-700">{error}</span>
+        {/* Content Area */}
+        {!searchTerm ? (
+          /* Search Prompt */
+          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-6">
+              <ChartBarIcon className="w-10 h-10 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Search for Risk Insights</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Enter an organization name in the search box above to view detailed vulnerability analysis, trends, and risk insights.
+            </p>
+            <div className="text-sm text-gray-500">
+              <p>Available features:</p>
+              <ul className="mt-2 space-y-1 max-w-xs mx-auto">
+                <li>• Vulnerability trend analysis</li>
+                <li>• Risk progression tracking</li>
+                <li>• Host-by-host comparisons</li>
+                <li>• Interactive charts and tables</li>
+              </ul>
             </div>
           </div>
-        )}
-
-        {/* Data Loading */}
-        {dataLoading && (
-          <div className="flex items-center justify-center h-32">
-            <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
-            <span className="ml-2 text-gray-600">Loading risk insights...</span>
+        ) : !selectedOrgId ? (
+          /* Selection Prompt */
+          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+            <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Select an Organization
+            </h3>
+            <p className="text-gray-600">
+              Choose an organization from the search results above to view its risk insights.
+            </p>
           </div>
-        )}
+        ) : (
+          <>
+            {/* Error Display */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <div className="flex items-center">
+                  <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
+                  <span className="text-red-700">{error}</span>
+                </div>
+              </div>
+            )}
 
-        {/* Risk Insights Data */}
-        {riskData && !dataLoading && (
+            {/* Data Loading */}
+            {dataLoading && (
+              <div className="flex items-center justify-center h-32">
+                <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
+                <span className="ml-2 text-gray-600">Loading risk insights...</span>
+              </div>
+            )}
+
+            {/* Risk Insights Data */}
+            {riskData && !dataLoading && (
           <div className="space-y-6">
             {riskData.hosts.length === 0 ? (
               <div className="text-center py-12">
@@ -916,19 +903,54 @@ export default function RiskInsightsPage() {
               <>
                 {/* Organization Header */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    {riskData.organization.name}
-                  </h2>
-                  <p className="text-gray-600">
-                    Source Type:{" "}
-                    <span className="font-medium capitalize">
-                      {riskData.organization.source_type}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {riskData.hosts.length} hosts analyzed across multiple
-                    iterations
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                        {riskData.organization.name}
+                      </h2>
+                      <p className="text-gray-600">
+                        Source Type:{" "}
+                        <span className="font-medium capitalize">
+                          {riskData.organization.source_type}
+                        </span>
+                      </p>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {riskData.hosts.length} hosts analyzed across multiple
+                        iterations
+                      </p>
+                    </div>
+                    
+                    {/* View Mode Toggle */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-medium text-gray-700">
+                        View Mode:
+                      </span>
+                      <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                        <button
+                          onClick={() => setViewMode("charts")}
+                          className={`px-3 py-1 text-sm font-medium ${
+                            viewMode === "charts"
+                              ? "bg-blue-500 text-white"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <ChartPieIcon className="h-4 w-4 inline mr-1" />
+                          Charts
+                        </button>
+                        <button
+                          onClick={() => setViewMode("table")}
+                          className={`px-3 py-1 text-sm font-medium ${
+                            viewMode === "table"
+                              ? "bg-blue-500 text-white"
+                              : "bg-white text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <TableCellsIcon className="h-4 w-4 inline mr-1" />
+                          Table
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Charts View */}
@@ -1435,6 +1457,128 @@ export default function RiskInsightsPage() {
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {/* Vulnerability Details Modal */}
+        {selectedHost && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-hidden">
+              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">
+                  Vulnerabilities for {selectedHost}
+                </h3>
+                <button
+                  onClick={() => setSelectedHost(null)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <span className="sr-only">Close</span>
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-96">
+                {vulnLoading ? (
+                  <div className="flex items-center justify-center h-32">
+                    <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
+                    <span className="ml-2 text-gray-600">
+                      Loading vulnerabilities...
+                    </span>
+                  </div>
+                ) : hostVulnerabilities.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShieldCheckIcon className="mx-auto h-12 w-12 text-green-500" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                      No vulnerabilities found
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      This host has no recorded vulnerabilities.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {hostVulnerabilities
+                      .sort(
+                        (a, b) =>
+                          getSeverityOrder(a.severity) -
+                          getSeverityOrder(b.severity)
+                      )
+                      .map((vuln) => {
+                        const config =
+                          severityConfig[
+                            vuln.severity as keyof typeof severityConfig
+                          ] || severityConfig.info;
+
+                        return (
+                          <div
+                            key={vuln.id}
+                            className={`${config.bgColor} border rounded-lg p-4`}
+                          >
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex-1">
+                                <h4 className="font-medium text-gray-900">
+                                  {vuln.vulnerability_name}
+                                </h4>
+                                {vuln.cve_id && (
+                                  <p className="text-sm text-gray-600 mt-1">
+                                    {vuln.cve_id}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center space-x-2 ml-4">
+                                <config.icon
+                                  className={`h-4 w-4 ${config.color}`}
+                                />
+                                <span
+                                  className={`text-sm font-medium ${config.color} capitalize`}
+                                >
+                                  {vuln.severity}
+                                </span>
+                                {vuln.cvss_score && (
+                                  <span className="text-sm text-gray-600">
+                                    ({vuln.cvss_score})
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+
+                            {vuln.description && (
+                              <p className="text-sm text-gray-700 mb-2 line-clamp-3">
+                                {vuln.description}
+                              </p>
+                            )}
+
+                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                              {vuln.port && <span>Port: {vuln.port}</span>}
+                              {vuln.protocol && (
+                                <span>Protocol: {vuln.protocol}</span>
+                              )}
+                              {vuln.service && (
+                                <span>Service: {vuln.service}</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        </div>
       </div>
     </AppLayout>
   );
