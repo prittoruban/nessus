@@ -1,10 +1,11 @@
-'use client'
+"use client";
 
-import { useState, useEffect, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
-import AppLayout from '@/components/AppLayout'
-import { 
+import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import AppLayout from "@/components/AppLayout";
+import SearchFilters from "@/components/SearchFilters";
+import {
   DocumentArrowDownIcon,
   EyeIcon,
   FunnelIcon,
@@ -13,8 +14,7 @@ import {
   ExclamationTriangleIcon,
   ShieldCheckIcon,
   DocumentTextIcon,
-  BuildingOfficeIcon
-} from '@heroicons/react/24/outline'
+} from "@heroicons/react/24/outline";
 
 interface Report {
   id: string;
@@ -36,6 +36,21 @@ interface Report {
   assessor: string;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+  source_type: "internal" | "external";
+  report_count: number;
+  latest_scan: string;
+  total_ips: number;
+  total_vulnerabilities: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  info_count: number;
+}
+
 interface Filters {
   search: string;
   sourceType: "all" | "internal" | "external";
@@ -49,9 +64,15 @@ interface Filters {
 
 export default function ReportsPage() {
   const router = useRouter();
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [selectedOrg, setSelectedOrg] = useState<Organization | null>(null);
+  const [selectedSourceType, setSelectedSourceType] = useState<
+    "all" | "internal" | "external"
+  >("all");
   const [reports, setReports] = useState<Report[]>([]);
   const [filteredReports, setFilteredReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
+  const [reportsLoading, setReportsLoading] = useState(false);
   const [error, setError] = useState("");
   const [exporting, setExporting] = useState<string | null>(null);
   const [filters, setFilters] = useState<Filters>({
@@ -64,21 +85,88 @@ export default function ReportsPage() {
     customStartDate: "",
     customEndDate: "",
   });
-  // Removed showFilters state as it's no longer needed
 
-  const fetchReports = useCallback(async () => {
-    if (!filters.search.trim()) {
-      setReports([]);
-      setFilteredReports([]);
-      return;
-    }
-
+  const fetchOrganizations = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
+
+      let query = supabase
+        .from("organizations")
+        .select(
+          `
+        id,
+        name,
+        source_type,
+        reports (
+          id,
+          total_vulnerabilities,
+          critical_count,
+          high_count,
+          medium_count,
+          low_count,
+          info_count,
+          scan_end_date,
+          status
+        )
+      `
+        )
+        .order("name");
+
+      // Add source type filter if not 'all'
+      if (selectedSourceType !== "all") {
+        query = query.eq("source_type", selectedSourceType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const processedOrgs =
+        data?.map((org) => {
+          const completedReports = org.reports.filter(
+            (r) => r.status === "completed"
+          );
+          const latestReport = completedReports.sort(
+            (a, b) =>
+              new Date(b.scan_end_date).getTime() -
+              new Date(a.scan_end_date).getTime()
+          )[0];
+
+          return {
+            id: org.id,
+            name: org.name,
+            source_type: org.source_type,
+            report_count: completedReports.length,
+            latest_scan: latestReport?.scan_end_date || "",
+            total_ips: 0,
+            total_vulnerabilities: latestReport?.total_vulnerabilities || 0,
+            critical_count: latestReport?.critical_count || 0,
+            high_count: latestReport?.high_count || 0,
+            medium_count: latestReport?.medium_count || 0,
+            low_count: latestReport?.low_count || 0,
+            info_count: latestReport?.info_count || 0,
+          };
+        }) || [];
+
+      setOrganizations(processedOrgs);
+    } catch (err) {
+      console.error("Error fetching organizations:", err);
+      setError("Failed to fetch organizations");
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedSourceType]);
+
+  const fetchReportsForOrg = useCallback(async (orgId: string) => {
+    try {
+      setReportsLoading(true);
+      setError("");
+
       const { data, error } = await supabase
         .from("reports")
         .select("*")
+        .eq("org_id", orgId)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -87,9 +175,18 @@ export default function ReportsPage() {
       console.error("Error fetching reports:", err);
       setError("Failed to fetch reports");
     } finally {
-      setLoading(false);
+      setReportsLoading(false);
     }
-  }, [filters.search]);
+  }, []);
+
+  // Initial load and when source type changes
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  useEffect(() => {
+    fetchOrganizations();
+  }, [selectedSourceType, fetchOrganizations]);
 
   const applyFilters = useCallback(() => {
     let filtered = [...reports];
@@ -180,20 +277,8 @@ export default function ReportsPage() {
   }, [reports, filters]);
 
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchReports();
-    }, 500); // Debounce search
-
-    return () => clearTimeout(timeoutId);
-  }, [fetchReports]);
-
-  useEffect(() => {
     applyFilters();
   }, [applyFilters]);
-
-  const updateFilter = (key: keyof Filters, value: string) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-  };
 
   const clearFilters = () => {
     setFilters({
@@ -288,74 +373,50 @@ export default function ReportsPage() {
                   Vulnerability Assessment Reports
                 </h1>
                 <p className="text-gray-600">
-                  Search for organizations to view their vulnerability assessment reports
+                  Search for organizations to view their vulnerability
+                  assessment reports
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Search */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Search Organizations
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter organization name to search..."
-                    value={filters.search}
-                    onChange={(e) => updateFilter("search", e.target.value)}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Source Type Filter - Only show when searching */}
-              {filters.search.trim() && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Assessment Type
-                  </label>
-                  <select
-                    value={filters.sourceType}
-                    onChange={(e) => updateFilter("sourceType", e.target.value)}
-                    className="w-full md:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="all">All Assessment Types</option>
-                    <option value="internal">Internal Assessments</option>
-                    <option value="external">External Assessments</option>
-                  </select>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Search Filters */}
+          <SearchFilters
+            organizations={organizations}
+            selectedOrg={selectedOrg}
+            selectedSourceType={selectedSourceType}
+            loading={loading}
+            onOrgSelect={(org) => {
+              setSelectedOrg(org);
+              fetchReportsForOrg(org.id);
+            }}
+            onSourceTypeChange={setSelectedSourceType}
+          />
 
           {/* Content Area */}
-          {!filters.search.trim() ? (
-            /* Search Prompt */
+          {!selectedOrg ? (
+            /* Default Prompt */
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-6">
                 <DocumentTextIcon className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Search for Reports
+                Select Organization for Reports
               </h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Enter an organization name in the search box above to find vulnerability assessment reports.
+                Choose an assessment type and organization from the dropdowns
+                above to view their vulnerability assessment reports.
               </p>
               <div className="text-sm text-gray-500">
-                <p>You can search for:</p>
+                <p>You can view:</p>
                 <ul className="mt-2 space-y-1 max-w-xs mx-auto">
-                  <li>• Organization names</li>
-                  <li>• Assessee names</li>
-                  <li>• Assessor names</li>
+                  <li>• All vulnerability reports</li>
+                  <li>• Export reports as PDF</li>
+                  <li>• Filter by status and date</li>
                 </ul>
               </div>
             </div>
-          ) : loading ? (
+          ) : reportsLoading ? (
             /* Loading State */
             <div className="professional-card text-center py-16">
               <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mb-6 shadow-lg shadow-blue-500/25 animate-pulse">
@@ -379,7 +440,9 @@ export default function ReportsPage() {
               </h3>
               <p className="text-gray-600 mb-8">{error}</p>
               <button
-                onClick={() => fetchReports()}
+                onClick={() =>
+                  selectedOrg && fetchReportsForOrg(selectedOrg.id)
+                }
                 className="professional-btn-primary"
               >
                 Try Again
@@ -435,10 +498,10 @@ export default function ReportsPage() {
                     search terms or filters.
                   </p>
                   <button
-                    onClick={() => updateFilter("search", "")}
+                    onClick={() => setSelectedOrg(null)}
                     className="professional-btn-secondary"
                   >
-                    Clear Search
+                    Clear Selection
                   </button>
                 </div>
               ) : (

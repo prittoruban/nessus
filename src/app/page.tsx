@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useCallback, Fragment } from "react";
 import AppLayout from "@/components/AppLayout";
+import SearchFilters from "@/components/SearchFilters";
 import { supabase } from "@/lib/supabase";
 import {
-  BuildingOfficeIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
   CalendarIcon,
-  ArrowPathIcon,
   PresentationChartLineIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -129,7 +128,6 @@ export default function DashboardPage() {
   const [selectedSourceType, setSelectedSourceType] = useState<
     "all" | "internal" | "external"
   >("all");
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [overviewStats, setOverviewStats] = useState<OverviewStats>({
@@ -152,11 +150,118 @@ export default function DashboardPage() {
     "charts" | "detailed" | "compliance" | "executive"
   >("charts");
 
-  const fetchOrganizations = useCallback(
-    async (searchQuery: string = "") => {
-      if (!searchQuery.trim()) {
-        setOrganizations([]);
-        // Clear selection when search is empty
+  const fetchOrganizations = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      let query = supabase
+        .from("organizations")
+        .select(
+          `
+        id,
+        name,
+        source_type,
+        reports (
+          id,
+          total_ips_tested,
+          total_vulnerabilities,
+          critical_count,
+          high_count,
+          medium_count,
+          low_count,
+          info_count,
+          scan_end_date,
+          iteration_number,
+          status
+        )
+      `
+        )
+        .order("name");
+
+      // Add source type filter if not 'all'
+      if (selectedSourceType !== "all") {
+        query = query.eq("source_type", selectedSourceType);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      const processedOrgs =
+        data?.map((org) => {
+          const completedReports = org.reports.filter(
+            (r) => r.status === "completed"
+          );
+          const latestReport = completedReports.sort(
+            (a, b) =>
+              new Date(b.scan_end_date).getTime() -
+              new Date(a.scan_end_date).getTime()
+          )[0];
+
+          // Calculate risk score based on vulnerability distribution
+          const calculateRiskScore = (
+            critical: number,
+            high: number,
+            medium: number,
+            low: number,
+            total: number
+          ) => {
+            if (total === 0) return 0;
+            const criticalWeight = 10;
+            const highWeight = 7;
+            const mediumWeight = 4;
+            const lowWeight = 1;
+
+            const weightedScore =
+              critical * criticalWeight +
+              high * highWeight +
+              medium * mediumWeight +
+              low * lowWeight;
+            const maxPossibleScore = total * criticalWeight;
+            return Math.round((weightedScore / maxPossibleScore) * 100);
+          };
+
+          const riskScore = latestReport
+            ? calculateRiskScore(
+                latestReport.critical_count,
+                latestReport.high_count,
+                latestReport.medium_count,
+                latestReport.low_count,
+                latestReport.total_vulnerabilities
+              )
+            : 0;
+
+          return {
+            id: org.id,
+            name: org.name,
+            source_type: org.source_type,
+            report_count: completedReports.length,
+            latest_scan: latestReport?.scan_end_date || "",
+            total_ips: latestReport?.total_ips_tested || 0,
+            total_vulnerabilities: latestReport?.total_vulnerabilities || 0,
+            critical_count: latestReport?.critical_count || 0,
+            high_count: latestReport?.high_count || 0,
+            medium_count: latestReport?.medium_count || 0,
+            low_count: latestReport?.low_count || 0,
+            info_count: latestReport?.info_count || 0,
+            risk_score: riskScore,
+            compliance_status:
+              riskScore > 70
+                ? "non-compliant"
+                : riskScore > 40
+                ? "partial"
+                : ("compliant" as "compliant" | "non-compliant" | "partial"),
+          };
+        }) || [];
+
+      setOrganizations(processedOrgs);
+
+      // Check if currently selected org is still in the results
+      if (
+        selectedOrg &&
+        !processedOrgs.find((org) => org.id === selectedOrg.id)
+      ) {
+        // Selected org is no longer in results, clear selection
         setSelectedOrg(null);
         setOverviewStats({
           selectedOrg: null,
@@ -174,173 +279,23 @@ export default function DashboardPage() {
             patch_compliance: 0,
           },
         });
-        return;
       }
-
-      try {
-        setLoading(true);
-
-        let query = supabase
-          .from("organizations")
-          .select(
-            `
-          id,
-          name,
-          source_type,
-          reports (
-            id,
-            total_ips_tested,
-            total_vulnerabilities,
-            critical_count,
-            high_count,
-            medium_count,
-            low_count,
-            info_count,
-            scan_end_date,
-            iteration_number,
-            status
-          )
-        `
-          )
-          .order("name");
-
-        // Add search filter
-        if (searchQuery.trim()) {
-          query = query.ilike("name", `%${searchQuery}%`);
-        }
-
-        // Add source type filter if not 'all'
-        if (selectedSourceType !== "all") {
-          query = query.eq("source_type", selectedSourceType);
-        }
-
-        const { data, error } = await query;
-
-        if (error) throw error;
-
-        const processedOrgs =
-          data?.map((org) => {
-            const completedReports = org.reports.filter(
-              (r) => r.status === "completed"
-            );
-            const latestReport = completedReports.sort(
-              (a, b) =>
-                new Date(b.scan_end_date).getTime() -
-                new Date(a.scan_end_date).getTime()
-            )[0];
-
-            // Calculate risk score based on vulnerability distribution
-            const calculateRiskScore = (
-              critical: number,
-              high: number,
-              medium: number,
-              low: number,
-              total: number
-            ) => {
-              if (total === 0) return 0;
-              const criticalWeight = 10;
-              const highWeight = 7;
-              const mediumWeight = 4;
-              const lowWeight = 1;
-
-              const weightedScore =
-                critical * criticalWeight +
-                high * highWeight +
-                medium * mediumWeight +
-                low * lowWeight;
-              const maxPossibleScore = total * criticalWeight;
-              return Math.round((weightedScore / maxPossibleScore) * 100);
-            };
-
-            const riskScore = latestReport
-              ? calculateRiskScore(
-                  latestReport.critical_count,
-                  latestReport.high_count,
-                  latestReport.medium_count,
-                  latestReport.low_count,
-                  latestReport.total_vulnerabilities
-                )
-              : 0;
-
-            return {
-              id: org.id,
-              name: org.name,
-              source_type: org.source_type,
-              report_count: completedReports.length,
-              latest_scan: latestReport?.scan_end_date || "",
-              total_ips: latestReport?.total_ips_tested || 0,
-              total_vulnerabilities: latestReport?.total_vulnerabilities || 0,
-              critical_count: latestReport?.critical_count || 0,
-              high_count: latestReport?.high_count || 0,
-              medium_count: latestReport?.medium_count || 0,
-              low_count: latestReport?.low_count || 0,
-              info_count: latestReport?.info_count || 0,
-              risk_score: riskScore,
-              compliance_status:
-                riskScore > 70
-                  ? "non-compliant"
-                  : riskScore > 40
-                  ? "partial"
-                  : ("compliant" as "compliant" | "non-compliant" | "partial"),
-            };
-          }) || [];
-
-        setOrganizations(processedOrgs);
-
-        // Check if currently selected org is still in the results
-        if (
-          selectedOrg &&
-          !processedOrgs.find((org) => org.id === selectedOrg.id)
-        ) {
-          // Selected org is no longer in results, clear selection
-          setSelectedOrg(null);
-          setOverviewStats({
-            selectedOrg: null,
-            previousIteration: null,
-            ipBreakdown: [],
-            trendData: [],
-            complianceData: [],
-            topVulnerabilities: [],
-            executiveSummary: {
-              overall_risk_level: "low",
-              improvement_percentage: 0,
-              critical_issues_resolved: 0,
-              new_critical_issues: 0,
-              time_to_remediation: 0,
-              patch_compliance: 0,
-            },
-          });
-        }
-      } catch (err) {
-        console.error("Error fetching organizations:", err);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [selectedSourceType, selectedOrg]
-  );
-
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      fetchOrganizations(searchTerm);
-    }, 500);
-
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, fetchOrganizations]);
-
-  // Re-fetch organizations when source type changes
-  useEffect(() => {
-    if (searchTerm.trim()) {
-      // Only clear selected organization if it's not in the new results
-      // This will be handled after the fetch completes
-
-      const timeoutId = setTimeout(() => {
-        fetchOrganizations(searchTerm);
-      }, 300);
-      return () => clearTimeout(timeoutId);
+    } catch (err) {
+      console.error("Error fetching organizations:", err);
+    } finally {
+      setLoading(false);
     }
-  }, [selectedSourceType, searchTerm, fetchOrganizations]);
+  }, [selectedSourceType, selectedOrg]);
+
+  // Initial load of organizations
+  useEffect(() => {
+    fetchOrganizations();
+  }, [fetchOrganizations]);
+
+  // Fetch organizations when source type changes
+  useEffect(() => {
+    fetchOrganizations();
+  }, [selectedSourceType, fetchOrganizations]);
 
   // Fetch detailed stats for selected organization with comprehensive analytics
   const fetchOrgDetails = async (org: Organization) => {
@@ -831,105 +786,33 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
-                <div className="flex-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Search Organizations
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter organization name to search..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Assessment Type Filter - Only show when searching */}
-              {searchTerm.trim() && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Assessment Type
-                  </label>
-                  <select
-                    value={selectedSourceType}
-                    onChange={(e) =>
-                      setSelectedSourceType(
-                        e.target.value as "all" | "internal" | "external"
-                      )
-                    }
-                    className="w-full sm:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  >
-                    <option value="all">All Assessments</option>
-                    <option value="internal">Internal Only</option>
-                    <option value="external">External Only</option>
-                  </select>
-                </div>
-              )}
-
-              {loading && (
-                <div className="flex items-center space-x-2 text-gray-500">
-                  <ArrowPathIcon className="h-4 w-4 animate-spin" />
-                  <span className="text-sm">Searching organizations...</span>
-                </div>
-              )}
-
-              {organizations.length > 0 && searchTerm && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-gray-700">
-                    Select Organization
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {organizations.map((org) => (
-                      <button
-                        key={org.id}
-                        onClick={() => {
-                          setSelectedOrg(org);
-                          fetchOrgDetails(org);
-                        }}
-                        className={`p-3 text-left rounded-lg border transition-colors ${
-                          selectedOrg?.id === org.id
-                            ? "border-blue-500 bg-blue-50 text-blue-900"
-                            : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                        }`}
-                      >
-                        <div className="font-medium">{org.name}</div>
-                        <div className="text-sm text-gray-500 capitalize">
-                          {org.source_type} Assessment •{" "}
-                          {org.total_vulnerabilities} vulnerabilities
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {searchTerm && organizations.length === 0 && !loading && (
-                <div className="text-center py-4 text-gray-500">
-                  No organizations found matching &quot;{searchTerm}&quot;
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Search Filters */}
+          <SearchFilters
+            organizations={organizations}
+            selectedOrg={selectedOrg}
+            selectedSourceType={selectedSourceType}
+            loading={loading}
+            onOrgSelect={(org) => {
+              setSelectedOrg(org);
+              fetchOrgDetails(org);
+            }}
+            onSourceTypeChange={setSelectedSourceType}
+          />
 
           {/* Content Area */}
-          {!searchTerm ? (
-            /* Search Prompt */
+          {!selectedOrg ? (
+            /* Default Prompt */
             <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
               <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-6">
                 <PresentationChartLineIcon className="w-10 h-10 text-blue-600" />
               </div>
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                Search for Dashboard Overview
+                Select Organization for Dashboard Overview
               </h3>
               <p className="text-gray-600 mb-8 max-w-md mx-auto">
-                Enter an organization name in the search box above to view
-                comprehensive security posture analysis and executive insights.
+                Choose an assessment type and organization from the dropdowns
+                above to view comprehensive security posture analysis and
+                executive insights.
               </p>
               <div className="text-sm text-gray-500">
                 <p>Available features:</p>
@@ -940,18 +823,6 @@ export default function DashboardPage() {
                   <li>• Interactive charts and metrics</li>
                 </ul>
               </div>
-            </div>
-          ) : !selectedOrg ? (
-            /* Selection Prompt */
-            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-              <PresentationChartLineIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Select an Organization
-              </h3>
-              <p className="text-gray-600">
-                Choose an organization from the search results above to view its
-                dashboard overview.
-              </p>
             </div>
           ) : (
             <Fragment>

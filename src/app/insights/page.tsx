@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import AppLayout from "@/components/AppLayout";
+import SearchFilters from "@/components/SearchFilters";
 import {
   ChartBarIcon,
   ArrowTrendingUpIcon,
@@ -18,7 +19,6 @@ import {
   TableCellsIcon,
   ArrowsRightLeftIcon,
   DocumentChartBarIcon,
-  BuildingOfficeIcon,
 } from "@heroicons/react/24/outline";
 import {
   Chart as ChartJS,
@@ -52,6 +52,17 @@ interface Organization {
   id: string;
   name: string;
   source_type: "internal" | "external";
+  report_count: number;
+  latest_scan: string;
+  total_ips: number;
+  total_vulnerabilities: number;
+  critical_count: number;
+  high_count: number;
+  medium_count: number;
+  low_count: number;
+  info_count: number;
+  risk_score?: number;
+  compliance_status?: "compliant" | "non-compliant" | "partial";
 }
 
 interface IterationData {
@@ -160,7 +171,6 @@ export default function RiskInsightsPage() {
   const [trendAnalysis, setTrendAnalysis] = useState<TrendAnalysis | null>(
     null
   );
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const [chartData, setChartData] = useState<{
     vulnerabilityTrend: ChartData | null;
     severityDistribution: ChartData | null;
@@ -178,25 +188,34 @@ export default function RiskInsightsPage() {
   //   fetchOrganizations();
   // }, []);
 
-  const fetchOrganizations = useCallback(async (searchQuery: string = "") => {
-    if (!searchQuery.trim()) {
-      setOrganizations([]);
-      return;
-    }
-
+  const fetchOrganizations = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
-      
+
       let query = supabase
         .from("organizations")
-        .select("*")
+        .select(
+          `
+        id,
+        name,
+        source_type,
+        reports (
+          id,
+          total_ips_tested,
+          total_vulnerabilities,
+          critical_count,
+          high_count,
+          medium_count,
+          low_count,
+          info_count,
+          scan_end_date,
+          iteration_number,
+          status
+        )
+      `
+        )
         .order("name");
-
-      // Add search filter
-      if (searchQuery.trim()) {
-        query = query.ilike("name", `%${searchQuery}%`);
-      }
 
       // Add source type filter if not 'all'
       if (selectedSourceType !== "all") {
@@ -206,7 +225,75 @@ export default function RiskInsightsPage() {
       const { data, error } = await query;
 
       if (error) throw error;
-      setOrganizations(data || []);
+
+      const processedOrgs =
+        data?.map((org) => {
+          const completedReports = org.reports.filter(
+            (r) => r.status === "completed"
+          );
+          const latestReport = completedReports.sort(
+            (a, b) =>
+              new Date(b.scan_end_date).getTime() -
+              new Date(a.scan_end_date).getTime()
+          )[0];
+
+          // Calculate risk score based on vulnerability distribution
+          const calculateRiskScore = (
+            critical: number,
+            high: number,
+            medium: number,
+            low: number,
+            total: number
+          ) => {
+            if (total === 0) return 0;
+            const criticalWeight = 10;
+            const highWeight = 7;
+            const mediumWeight = 4;
+            const lowWeight = 1;
+
+            const weightedScore =
+              critical * criticalWeight +
+              high * highWeight +
+              medium * mediumWeight +
+              low * lowWeight;
+            const maxPossibleScore = total * criticalWeight;
+            return Math.round((weightedScore / maxPossibleScore) * 100);
+          };
+
+          const riskScore = latestReport
+            ? calculateRiskScore(
+                latestReport.critical_count,
+                latestReport.high_count,
+                latestReport.medium_count,
+                latestReport.low_count,
+                latestReport.total_vulnerabilities
+              )
+            : 0;
+
+          return {
+            id: org.id,
+            name: org.name,
+            source_type: org.source_type,
+            report_count: completedReports.length,
+            latest_scan: latestReport?.scan_end_date || "",
+            total_ips: latestReport?.total_ips_tested || 0,
+            total_vulnerabilities: latestReport?.total_vulnerabilities || 0,
+            critical_count: latestReport?.critical_count || 0,
+            high_count: latestReport?.high_count || 0,
+            medium_count: latestReport?.medium_count || 0,
+            low_count: latestReport?.low_count || 0,
+            info_count: latestReport?.info_count || 0,
+            risk_score: riskScore,
+            compliance_status:
+              riskScore > 70
+                ? "non-compliant"
+                : riskScore > 40
+                ? "partial"
+                : ("compliant" as "compliant" | "non-compliant" | "partial"),
+          };
+        }) || [];
+
+      setOrganizations(processedOrgs);
     } catch (err) {
       console.error("Error fetching organizations:", err);
       setError("Failed to fetch organizations");
@@ -215,34 +302,14 @@ export default function RiskInsightsPage() {
     }
   }, [selectedSourceType]);
 
-  // Debounced search effect
+  // Initial load and when source type changes
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (searchTerm.trim()) {
-        fetchOrganizations(searchTerm);
-      } else {
-        setOrganizations([]);
-        setSelectedOrgId("");
-        setRiskData(null);
-      }
-    }, 500);
+    fetchOrganizations();
+  }, [fetchOrganizations]);
 
-    return () => clearTimeout(timeoutId);
-  }, [searchTerm, fetchOrganizations]);
-
-  // Re-fetch organizations when source type changes
   useEffect(() => {
-    if (searchTerm.trim()) {
-      // Clear selected organization when source type changes
-      setSelectedOrgId("");
-      setRiskData(null);
-      
-      const timeoutId = setTimeout(() => {
-        fetchOrganizations(searchTerm);
-      }, 300);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [selectedSourceType, searchTerm, fetchOrganizations]);
+    fetchOrganizations();
+  }, [selectedSourceType, fetchOrganizations]);
 
   // Fetch risk data when organization or source type changes
   const fetchRiskInsights = useCallback(async () => {
@@ -745,840 +812,783 @@ export default function RiskInsightsPage() {
                   Risk Insights
                 </h1>
                 <p className="text-gray-600">
-                  Search for organizations to view vulnerability analysis and trends
+                  Search for organizations to view vulnerability analysis and
+                  trends
                 </p>
               </div>
             </div>
           </div>
 
-        {/* Search */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-4">
-              <BuildingOfficeIcon className="h-5 w-5 text-gray-400" />
-              <div className="flex-1">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Search Organizations
-                </label>
-                <input
-                  type="text"
-                  placeholder="Enter organization name to search..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
+          {/* Search Filters */}
+          <SearchFilters
+            organizations={organizations}
+            selectedOrg={
+              selectedOrgId
+                ? organizations.find((org) => org.id === selectedOrgId) || null
+                : null
+            }
+            selectedSourceType={selectedSourceType}
+            loading={loading}
+            onOrgSelect={(org) => setSelectedOrgId(org.id)}
+            onSourceTypeChange={setSelectedSourceType}
+          />
+
+          {/* Content Area */}
+          {!selectedOrgId ? (
+            /* Default Prompt */
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-6">
+                <ChartBarIcon className="w-10 h-10 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Select Organization for Risk Insights
+              </h3>
+              <p className="text-gray-600 mb-8 max-w-md mx-auto">
+                Choose an assessment type and organization from the dropdowns
+                above to view detailed vulnerability analysis, trends, and risk
+                insights.
+              </p>
+              <div className="text-sm text-gray-500">
+                <p>Available features:</p>
+                <ul className="mt-2 space-y-1 max-w-xs mx-auto">
+                  <li>• Vulnerability trend analysis</li>
+                  <li>• Risk progression tracking</li>
+                  <li>• Host-by-host comparisons</li>
+                  <li>• Interactive charts and tables</li>
+                </ul>
               </div>
             </div>
-
-            {/* Assessment Type Filter - Only show when searching */}
-            {searchTerm.trim() && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Assessment Type
-                </label>
-                <select
-                  value={selectedSourceType}
-                  onChange={(e) =>
-                    setSelectedSourceType(
-                      e.target.value as "all" | "internal" | "external"
-                    )
-                  }
-                  className="w-full md:w-auto rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="all">All Assessment Types</option>
-                  <option value="internal">Internal Assessments</option>
-                  <option value="external">External Assessments</option>
-                </select>
-              </div>
-            )}
-
-            {/* Organization Results */}
-            {loading && searchTerm && (
-              <div className="flex items-center justify-center py-4">
-                <ArrowPathIcon className="h-5 w-5 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Searching organizations...</span>
-              </div>
-            )}
-
-            {organizations.length > 0 && searchTerm && (
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700">
-                  Select Organization
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {organizations.map((org) => (
-                    <button
-                      key={org.id}
-                      onClick={() => setSelectedOrgId(org.id)}
-                      className={`p-3 text-left rounded-lg border transition-colors ${
-                        selectedOrgId === org.id
-                          ? "border-blue-500 bg-blue-50 text-blue-900"
-                          : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
-                      }`}
-                    >
-                      <div className="font-medium">{org.name}</div>
-                      <div className="text-sm text-gray-500 capitalize">
-                        {org.source_type} Assessment
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {searchTerm && organizations.length === 0 && !loading && (
-              <div className="text-center py-4 text-gray-500">
-                No organizations found matching &quot;{searchTerm}&quot;
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Content Area */}
-        {!searchTerm ? (
-          /* Search Prompt */
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full mb-6">
-              <ChartBarIcon className="w-10 h-10 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">Search for Risk Insights</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Enter an organization name in the search box above to view detailed vulnerability analysis, trends, and risk insights.
-            </p>
-            <div className="text-sm text-gray-500">
-              <p>Available features:</p>
-              <ul className="mt-2 space-y-1 max-w-xs mx-auto">
-                <li>• Vulnerability trend analysis</li>
-                <li>• Risk progression tracking</li>
-                <li>• Host-by-host comparisons</li>
-                <li>• Interactive charts and tables</li>
-              </ul>
-            </div>
-          </div>
-        ) : !selectedOrgId ? (
-          /* Selection Prompt */
-          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
-            <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Select an Organization
-            </h3>
-            <p className="text-gray-600">
-              Choose an organization from the search results above to view its risk insights.
-            </p>
-          </div>
-        ) : (
-          <>
-            {/* Error Display */}
-            {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <div className="flex items-center">
-                  <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
-                  <span className="text-red-700">{error}</span>
-                </div>
-              </div>
-            )}
-
-            {/* Data Loading */}
-            {dataLoading && (
-              <div className="flex items-center justify-center h-32">
-                <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Loading risk insights...</span>
-              </div>
-            )}
-
-            {/* Risk Insights Data */}
-            {riskData && !dataLoading && (
-          <div className="space-y-6">
-            {riskData.hosts.length === 0 ? (
-              <div className="text-center py-12">
-                <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">
-                  No data available
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  No completed reports found for the selected organization and
-                  source type.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Organization Header */}
-                <div className="bg-white rounded-lg border border-gray-200 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                        {riskData.organization.name}
-                      </h2>
-                      <p className="text-gray-600">
-                        Source Type:{" "}
-                        <span className="font-medium capitalize">
-                          {riskData.organization.source_type}
-                        </span>
-                      </p>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {riskData.hosts.length} hosts analyzed across multiple
-                        iterations
-                      </p>
-                    </div>
-                    
-                    {/* View Mode Toggle */}
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm font-medium text-gray-700">
-                        View Mode:
-                      </span>
-                      <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-                        <button
-                          onClick={() => setViewMode("charts")}
-                          className={`px-3 py-1 text-sm font-medium ${
-                            viewMode === "charts"
-                              ? "bg-blue-500 text-white"
-                              : "bg-white text-gray-700 hover:bg-gray-50"
-                          }`}
-                        >
-                          <ChartPieIcon className="h-4 w-4 inline mr-1" />
-                          Charts
-                        </button>
-                        <button
-                          onClick={() => setViewMode("table")}
-                          className={`px-3 py-1 text-sm font-medium ${
-                            viewMode === "table"
-                              ? "bg-blue-500 text-white"
-                              : "bg-white text-gray-700 hover:bg-gray-50"
-                          }`}
-                        >
-                          <TableCellsIcon className="h-4 w-4 inline mr-1" />
-                          Table
-                        </button>
-                      </div>
-                    </div>
+          ) : (
+            <>
+              {/* Error Display */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <div className="flex items-center">
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
+                    <span className="text-red-700">{error}</span>
                   </div>
                 </div>
+              )}
 
-                {/* Charts View */}
-                {viewMode === "charts" && chartData.vulnerabilityTrend && (
-                  <div className="space-y-6">
-                    {/* Chart Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {/* Vulnerability Trend Chart */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="flex items-center space-x-2 mb-4">
-                          <PresentationChartLineIcon className="h-5 w-5 text-blue-600" />
-                          <h3 className="text-lg font-medium text-gray-900">
-                            Vulnerability Trends
-                          </h3>
-                        </div>
-                        <div className="h-80">
-                          <Line
-                            data={chartData.vulnerabilityTrend}
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              plugins: {
-                                legend: {
-                                  position: "top" as const,
-                                },
-                                tooltip: {
-                                  mode: "index" as const,
-                                  intersect: false,
-                                },
-                              },
-                              scales: {
-                                x: {
-                                  display: true,
-                                  title: {
-                                    display: true,
-                                    text: "Iterations",
-                                  },
-                                },
-                                y: {
-                                  display: true,
-                                  title: {
-                                    display: true,
-                                    text: "Number of Vulnerabilities",
-                                  },
-                                  beginAtZero: true,
-                                },
-                              },
-                              interaction: {
-                                mode: "nearest" as const,
-                                axis: "x" as const,
-                                intersect: false,
-                              },
-                            }}
-                          />
-                        </div>
-                      </div>
+              {/* Data Loading */}
+              {dataLoading && (
+                <div className="flex items-center justify-center h-32">
+                  <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
+                  <span className="ml-2 text-gray-600">
+                    Loading risk insights...
+                  </span>
+                </div>
+              )}
 
-                      {/* Severity Distribution Chart */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="flex items-center space-x-2 mb-4">
-                          <ChartPieIcon className="h-5 w-5 text-blue-600" />
-                          <h3 className="text-lg font-medium text-gray-900">
-                            Current Severity Distribution
-                          </h3>
-                        </div>
-                        <div className="h-80">
-                          <Doughnut
-                            data={chartData.severityDistribution!}
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              plugins: {
-                                legend: {
-                                  position: "bottom" as const,
-                                },
-                                tooltip: {
-                                  callbacks: {
-                                    label: (context) => {
-                                      const total = context.dataset.data.reduce(
-                                        (a: number, b: number) => a + b,
-                                        0
-                                      );
-                                      const percentage = (
-                                        ((context.raw as number) / total) *
-                                        100
-                                      ).toFixed(1);
-                                      return `${context.label}: ${context.raw} (${percentage}%)`;
-                                    },
-                                  },
-                                },
-                              },
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Host Comparison Chart */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="flex items-center space-x-2 mb-4">
-                          <DocumentChartBarIcon className="h-5 w-5 text-blue-600" />
-                          <h3 className="text-lg font-medium text-gray-900">
-                            Top 10 Hosts by Vulnerabilities
-                          </h3>
-                        </div>
-                        <div className="h-80">
-                          <Bar
-                            data={chartData.hostComparison!}
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              plugins: {
-                                legend: {
-                                  position: "top" as const,
-                                },
-                                tooltip: {
-                                  mode: "index" as const,
-                                  intersect: false,
-                                },
-                              },
-                              scales: {
-                                x: {
-                                  stacked: true,
-                                  title: {
-                                    display: true,
-                                    text: "Host IP Address",
-                                  },
-                                },
-                                y: {
-                                  stacked: true,
-                                  title: {
-                                    display: true,
-                                    text: "Number of Vulnerabilities",
-                                  },
-                                  beginAtZero: true,
-                                },
-                              },
-                            }}
-                          />
-                        </div>
-                      </div>
-
-                      {/* Risk Progression Chart */}
-                      <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <div className="flex items-center space-x-2 mb-4">
-                          <ArrowsRightLeftIcon className="h-5 w-5 text-blue-600" />
-                          <h3 className="text-lg font-medium text-gray-900">
-                            Risk Score Progression
-                          </h3>
-                        </div>
-                        <div className="h-80">
-                          <Line
-                            data={chartData.riskProgression!}
-                            options={{
-                              responsive: true,
-                              maintainAspectRatio: false,
-                              plugins: {
-                                legend: {
-                                  position: "top" as const,
-                                },
-                                tooltip: {
-                                  callbacks: {
-                                    label: (context) => {
-                                      return `Risk Score: ${context.raw}`;
-                                    },
-                                  },
-                                },
-                              },
-                              scales: {
-                                x: {
-                                  title: {
-                                    display: true,
-                                    text: "Iterations",
-                                  },
-                                },
-                                y: {
-                                  title: {
-                                    display: true,
-                                    text: "Risk Score (Weighted)",
-                                  },
-                                  beginAtZero: true,
-                                },
-                              },
-                            }}
-                          />
-                        </div>
-                      </div>
+              {/* Risk Insights Data */}
+              {riskData && !dataLoading && (
+                <div className="space-y-6">
+                  {riskData.hosts.length === 0 ? (
+                    <div className="text-center py-12">
+                      <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">
+                        No data available
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        No completed reports found for the selected organization
+                        and source type.
+                      </p>
                     </div>
-
-                    {/* Additional Analytics */}
-                    {trendAnalysis && (
+                  ) : (
+                    <>
+                      {/* Organization Header */}
                       <div className="bg-white rounded-lg border border-gray-200 p-6">
-                        <h3 className="text-lg font-medium text-gray-900 mb-4">
-                          Risk Analytics Summary
-                        </h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">
-                              {trendAnalysis.totalHosts}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Total Hosts
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+                              {riskData.organization.name}
+                            </h2>
+                            <p className="text-gray-600">
+                              Source Type:{" "}
+                              <span className="font-medium capitalize">
+                                {riskData.organization.source_type}
+                              </span>
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              {riskData.hosts.length} hosts analyzed across
+                              multiple iterations
+                            </p>
+                          </div>
+
+                          {/* View Mode Toggle */}
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-medium text-gray-700">
+                              View Mode:
+                            </span>
+                            <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                              <button
+                                onClick={() => setViewMode("charts")}
+                                className={`px-3 py-1 text-sm font-medium ${
+                                  viewMode === "charts"
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                <ChartPieIcon className="h-4 w-4 inline mr-1" />
+                                Charts
+                              </button>
+                              <button
+                                onClick={() => setViewMode("table")}
+                                className={`px-3 py-1 text-sm font-medium ${
+                                  viewMode === "table"
+                                    ? "bg-blue-500 text-white"
+                                    : "bg-white text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                <TableCellsIcon className="h-4 w-4 inline mr-1" />
+                                Table
+                              </button>
                             </div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">
-                              {trendAnalysis.totalIterations}
+                        </div>
+                      </div>
+
+                      {/* Charts View */}
+                      {viewMode === "charts" &&
+                        chartData.vulnerabilityTrend && (
+                          <div className="space-y-6">
+                            {/* Chart Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                              {/* Vulnerability Trend Chart */}
+                              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <div className="flex items-center space-x-2 mb-4">
+                                  <PresentationChartLineIcon className="h-5 w-5 text-blue-600" />
+                                  <h3 className="text-lg font-medium text-gray-900">
+                                    Vulnerability Trends
+                                  </h3>
+                                </div>
+                                <div className="h-80">
+                                  <Line
+                                    data={chartData.vulnerabilityTrend}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: {
+                                          position: "top" as const,
+                                        },
+                                        tooltip: {
+                                          mode: "index" as const,
+                                          intersect: false,
+                                        },
+                                      },
+                                      scales: {
+                                        x: {
+                                          display: true,
+                                          title: {
+                                            display: true,
+                                            text: "Iterations",
+                                          },
+                                        },
+                                        y: {
+                                          display: true,
+                                          title: {
+                                            display: true,
+                                            text: "Number of Vulnerabilities",
+                                          },
+                                          beginAtZero: true,
+                                        },
+                                      },
+                                      interaction: {
+                                        mode: "nearest" as const,
+                                        axis: "x" as const,
+                                        intersect: false,
+                                      },
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Severity Distribution Chart */}
+                              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <div className="flex items-center space-x-2 mb-4">
+                                  <ChartPieIcon className="h-5 w-5 text-blue-600" />
+                                  <h3 className="text-lg font-medium text-gray-900">
+                                    Current Severity Distribution
+                                  </h3>
+                                </div>
+                                <div className="h-80">
+                                  <Doughnut
+                                    data={chartData.severityDistribution!}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: {
+                                          position: "bottom" as const,
+                                        },
+                                        tooltip: {
+                                          callbacks: {
+                                            label: (context) => {
+                                              const total =
+                                                context.dataset.data.reduce(
+                                                  (a: number, b: number) =>
+                                                    a + b,
+                                                  0
+                                                );
+                                              const percentage = (
+                                                ((context.raw as number) /
+                                                  total) *
+                                                100
+                                              ).toFixed(1);
+                                              return `${context.label}: ${context.raw} (${percentage}%)`;
+                                            },
+                                          },
+                                        },
+                                      },
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Host Comparison Chart */}
+                              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <div className="flex items-center space-x-2 mb-4">
+                                  <DocumentChartBarIcon className="h-5 w-5 text-blue-600" />
+                                  <h3 className="text-lg font-medium text-gray-900">
+                                    Top 10 Hosts by Vulnerabilities
+                                  </h3>
+                                </div>
+                                <div className="h-80">
+                                  <Bar
+                                    data={chartData.hostComparison!}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: {
+                                          position: "top" as const,
+                                        },
+                                        tooltip: {
+                                          mode: "index" as const,
+                                          intersect: false,
+                                        },
+                                      },
+                                      scales: {
+                                        x: {
+                                          stacked: true,
+                                          title: {
+                                            display: true,
+                                            text: "Host IP Address",
+                                          },
+                                        },
+                                        y: {
+                                          stacked: true,
+                                          title: {
+                                            display: true,
+                                            text: "Number of Vulnerabilities",
+                                          },
+                                          beginAtZero: true,
+                                        },
+                                      },
+                                    }}
+                                  />
+                                </div>
+                              </div>
+
+                              {/* Risk Progression Chart */}
+                              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <div className="flex items-center space-x-2 mb-4">
+                                  <ArrowsRightLeftIcon className="h-5 w-5 text-blue-600" />
+                                  <h3 className="text-lg font-medium text-gray-900">
+                                    Risk Score Progression
+                                  </h3>
+                                </div>
+                                <div className="h-80">
+                                  <Line
+                                    data={chartData.riskProgression!}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: {
+                                          position: "top" as const,
+                                        },
+                                        tooltip: {
+                                          callbacks: {
+                                            label: (context) => {
+                                              return `Risk Score: ${context.raw}`;
+                                            },
+                                          },
+                                        },
+                                      },
+                                      scales: {
+                                        x: {
+                                          title: {
+                                            display: true,
+                                            text: "Iterations",
+                                          },
+                                        },
+                                        y: {
+                                          title: {
+                                            display: true,
+                                            text: "Risk Score (Weighted)",
+                                          },
+                                          beginAtZero: true,
+                                        },
+                                      },
+                                    }}
+                                  />
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-sm text-gray-600">
-                              Iterations
-                            </div>
+
+                            {/* Additional Analytics */}
+                            {trendAnalysis && (
+                              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                                <h3 className="text-lg font-medium text-gray-900 mb-4">
+                                  Risk Analytics Summary
+                                </h3>
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                      {trendAnalysis.totalHosts}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      Total Hosts
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                      {trendAnalysis.totalIterations}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      Iterations
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                      {trendAnalysis.averageVulnsPerHost}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      Avg Vulns/Host
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div
+                                      className={`text-2xl font-bold ${
+                                        trendAnalysis.riskScore > 100
+                                          ? "text-red-600"
+                                          : trendAnalysis.riskScore > 50
+                                          ? "text-yellow-600"
+                                          : "text-green-600"
+                                      }`}
+                                    >
+                                      {trendAnalysis.riskScore}
+                                    </div>
+                                    <div className="text-sm text-gray-600">
+                                      Risk Score
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="text-center">
-                            <div className="text-2xl font-bold text-blue-600">
-                              {trendAnalysis.averageVulnsPerHost}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Avg Vulns/Host
-                            </div>
-                          </div>
-                          <div className="text-center">
+                        )}
+
+                      {/* Table View */}
+                      {viewMode === "table" && (
+                        <div className="space-y-4">
+                          {riskData.hosts.map((host) => (
                             <div
-                              className={`text-2xl font-bold ${
-                                trendAnalysis.riskScore > 100
-                                  ? "text-red-600"
-                                  : trendAnalysis.riskScore > 50
-                                  ? "text-yellow-600"
-                                  : "text-green-600"
-                              }`}
+                              key={host.ip_address}
+                              className="bg-white rounded-lg border border-gray-200 overflow-hidden"
                             >
-                              {trendAnalysis.riskScore}
-                            </div>
-                            <div className="text-sm text-gray-600">
-                              Risk Score
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                              <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                                <div className="flex items-center justify-between">
+                                  <div>
+                                    <h3 className="text-lg font-medium text-gray-900">
+                                      {host.ip_address}
+                                    </h3>
+                                    {host.hostname && (
+                                      <p className="text-sm text-gray-600">
+                                        {host.hostname}
+                                      </p>
+                                    )}
+                                  </div>
+                                  <div className="text-sm text-gray-500">
+                                    {host.iterations.length} iteration
+                                    {host.iterations.length !== 1 ? "s" : ""}
+                                  </div>
+                                </div>
+                              </div>
 
-                {/* Table View */}
-                {viewMode === "table" && (
-                  <div className="space-y-4">
-                    {riskData.hosts.map((host) => (
-                      <div
-                        key={host.ip_address}
-                        className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                              <div className="p-6">
+                                <div className="grid gap-4">
+                                  {host.iterations.map((iteration, index) => {
+                                    const previousIteration =
+                                      index > 0
+                                        ? host.iterations[index - 1]
+                                        : null;
+
+                                    return (
+                                      <div
+                                        key={iteration.iteration_number}
+                                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                                        onClick={() =>
+                                          handleHostClick(
+                                            host.ip_address,
+                                            iteration.report_id
+                                          )
+                                        }
+                                      >
+                                        <div className="flex items-center justify-between mb-3">
+                                          <div className="flex items-center space-x-2">
+                                            <span className="font-medium text-gray-900">
+                                              Iteration{" "}
+                                              {iteration.iteration_number}
+                                            </span>
+                                            <span className="text-sm text-gray-500">
+                                              {new Date(
+                                                iteration.scan_date
+                                              ).toLocaleDateString()}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center space-x-2">
+                                            <EyeIcon className="h-4 w-4 text-gray-400" />
+                                            <span className="text-sm text-gray-500">
+                                              Click to view details
+                                            </span>
+                                          </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                                          {(
+                                            [
+                                              "critical",
+                                              "high",
+                                              "medium",
+                                              "low",
+                                              "info",
+                                            ] as const
+                                          ).map((severity) => {
+                                            const currentCount = iteration[
+                                              `${severity}_count` as keyof IterationData
+                                            ] as number;
+                                            const previousCount =
+                                              previousIteration
+                                                ? (previousIteration[
+                                                    `${severity}_count` as keyof IterationData
+                                                  ] as number)
+                                                : null;
+                                            const trend =
+                                              previousCount !== null
+                                                ? calculateTrend(
+                                                    currentCount,
+                                                    previousCount
+                                                  )
+                                                : null;
+
+                                            const config =
+                                              severityConfig[severity];
+
+                                            return (
+                                              <div
+                                                key={severity}
+                                                className={`${config.bgColor} border rounded-lg p-3`}
+                                              >
+                                                <div className="flex items-center justify-between mb-1">
+                                                  <config.icon
+                                                    className={`h-4 w-4 ${config.color}`}
+                                                  />
+                                                  {trend &&
+                                                    renderTrendIcon(trend)}
+                                                </div>
+                                                <div
+                                                  className={`text-2xl font-bold ${config.color}`}
+                                                >
+                                                  {currentCount}
+                                                </div>
+                                                <div className="text-xs font-medium text-gray-600 capitalize">
+                                                  {severity === "info"
+                                                    ? "Informational"
+                                                    : severity}
+                                                </div>
+                                                {trend &&
+                                                  trend.percentage > 0 && (
+                                                    <div className="text-xs text-gray-500 mt-1">
+                                                      {trend.direction === "up"
+                                                        ? "+"
+                                                        : "-"}
+                                                      {trend.percentage.toFixed(
+                                                        0
+                                                      )}
+                                                      %
+                                                    </div>
+                                                  )}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+
+                                        <div className="mt-3 pt-3 border-t border-gray-100">
+                                          <div className="text-sm text-gray-600">
+                                            Total Vulnerabilities:{" "}
+                                            <span className="font-medium">
+                                              {iteration.total_vulnerabilities}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* Vulnerability Details Modal */}
+              {selectedHost && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                  <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-hidden">
+                    <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                      <h3 className="text-lg font-medium text-gray-900">
+                        Vulnerabilities for {selectedHost}
+                      </h3>
+                      <button
+                        onClick={() => setSelectedHost(null)}
+                        className="text-gray-400 hover:text-gray-600"
                       >
-                        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h3 className="text-lg font-medium text-gray-900">
-                                {host.ip_address}
-                              </h3>
-                              {host.hostname && (
-                                <p className="text-sm text-gray-600">
-                                  {host.hostname}
-                                </p>
-                              )}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {host.iterations.length} iteration
-                              {host.iterations.length !== 1 ? "s" : ""}
-                            </div>
-                          </div>
-                        </div>
+                        <span className="sr-only">Close</span>
+                        <svg
+                          className="h-6 w-6"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
+                    </div>
 
-                        <div className="p-6">
-                          <div className="grid gap-4">
-                            {host.iterations.map((iteration, index) => {
-                              const previousIteration =
-                                index > 0 ? host.iterations[index - 1] : null;
+                    <div className="p-6 overflow-y-auto max-h-96">
+                      {vulnLoading ? (
+                        <div className="flex items-center justify-center h-32">
+                          <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
+                          <span className="ml-2 text-gray-600">
+                            Loading vulnerabilities...
+                          </span>
+                        </div>
+                      ) : hostVulnerabilities.length === 0 ? (
+                        <div className="text-center py-8">
+                          <ShieldCheckIcon className="mx-auto h-12 w-12 text-green-500" />
+                          <h3 className="mt-2 text-sm font-medium text-gray-900">
+                            No vulnerabilities found
+                          </h3>
+                          <p className="mt-1 text-sm text-gray-500">
+                            This host has no recorded vulnerabilities.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {hostVulnerabilities
+                            .sort(
+                              (a, b) =>
+                                getSeverityOrder(a.severity) -
+                                getSeverityOrder(b.severity)
+                            )
+                            .map((vuln) => {
+                              const config =
+                                severityConfig[
+                                  vuln.severity as keyof typeof severityConfig
+                                ] || severityConfig.info;
 
                               return (
                                 <div
-                                  key={iteration.iteration_number}
-                                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                                  onClick={() =>
-                                    handleHostClick(
-                                      host.ip_address,
-                                      iteration.report_id
-                                    )
-                                  }
+                                  key={vuln.id}
+                                  className={`${config.bgColor} border rounded-lg p-4`}
                                 >
-                                  <div className="flex items-center justify-between mb-3">
-                                    <div className="flex items-center space-x-2">
-                                      <span className="font-medium text-gray-900">
-                                        Iteration {iteration.iteration_number}
-                                      </span>
-                                      <span className="text-sm text-gray-500">
-                                        {new Date(
-                                          iteration.scan_date
-                                        ).toLocaleDateString()}
-                                      </span>
+                                  <div className="flex items-start justify-between mb-2">
+                                    <div className="flex-1">
+                                      <h4 className="font-medium text-gray-900">
+                                        {vuln.vulnerability_name}
+                                      </h4>
+                                      {vuln.cve_id && (
+                                        <p className="text-sm text-gray-600 mt-1">
+                                          {vuln.cve_id}
+                                        </p>
+                                      )}
                                     </div>
-                                    <div className="flex items-center space-x-2">
-                                      <EyeIcon className="h-4 w-4 text-gray-400" />
-                                      <span className="text-sm text-gray-500">
-                                        Click to view details
+                                    <div className="flex items-center space-x-2 ml-4">
+                                      <config.icon
+                                        className={`h-4 w-4 ${config.color}`}
+                                      />
+                                      <span
+                                        className={`text-sm font-medium ${config.color} capitalize`}
+                                      >
+                                        {vuln.severity}
                                       </span>
+                                      {vuln.cvss_score && (
+                                        <span className="text-sm text-gray-600">
+                                          ({vuln.cvss_score})
+                                        </span>
+                                      )}
                                     </div>
                                   </div>
 
-                                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                                    {(
-                                      [
-                                        "critical",
-                                        "high",
-                                        "medium",
-                                        "low",
-                                        "info",
-                                      ] as const
-                                    ).map((severity) => {
-                                      const currentCount = iteration[
-                                        `${severity}_count` as keyof IterationData
-                                      ] as number;
-                                      const previousCount = previousIteration
-                                        ? (previousIteration[
-                                            `${severity}_count` as keyof IterationData
-                                          ] as number)
-                                        : null;
-                                      const trend =
-                                        previousCount !== null
-                                          ? calculateTrend(
-                                              currentCount,
-                                              previousCount
-                                            )
-                                          : null;
+                                  {vuln.description && (
+                                    <p className="text-sm text-gray-700 mb-2 line-clamp-3">
+                                      {vuln.description}
+                                    </p>
+                                  )}
 
-                                      const config = severityConfig[severity];
-
-                                      return (
-                                        <div
-                                          key={severity}
-                                          className={`${config.bgColor} border rounded-lg p-3`}
-                                        >
-                                          <div className="flex items-center justify-between mb-1">
-                                            <config.icon
-                                              className={`h-4 w-4 ${config.color}`}
-                                            />
-                                            {trend && renderTrendIcon(trend)}
-                                          </div>
-                                          <div
-                                            className={`text-2xl font-bold ${config.color}`}
-                                          >
-                                            {currentCount}
-                                          </div>
-                                          <div className="text-xs font-medium text-gray-600 capitalize">
-                                            {severity === "info"
-                                              ? "Informational"
-                                              : severity}
-                                          </div>
-                                          {trend && trend.percentage > 0 && (
-                                            <div className="text-xs text-gray-500 mt-1">
-                                              {trend.direction === "up"
-                                                ? "+"
-                                                : "-"}
-                                              {trend.percentage.toFixed(0)}%
-                                            </div>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-
-                                  <div className="mt-3 pt-3 border-t border-gray-100">
-                                    <div className="text-sm text-gray-600">
-                                      Total Vulnerabilities:{" "}
-                                      <span className="font-medium">
-                                        {iteration.total_vulnerabilities}
-                                      </span>
-                                    </div>
+                                  <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                    {vuln.port && (
+                                      <span>Port: {vuln.port}</span>
+                                    )}
+                                    {vuln.protocol && (
+                                      <span>Protocol: {vuln.protocol}</span>
+                                    )}
+                                    {vuln.service && (
+                                      <span>Service: {vuln.service}</span>
+                                    )}
                                   </div>
                                 </div>
                               );
                             })}
-                          </div>
                         </div>
-                      </div>
-                    ))}
+                      )}
+                    </div>
                   </div>
-                )}
-              </>
-            )}
-          </div>
-        )}
+                </div>
+              )}
+            </>
+          )}
 
-        {/* Vulnerability Details Modal */}
-        {selectedHost && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Vulnerabilities for {selectedHost}
-                </h3>
-                <button
-                  onClick={() => setSelectedHost(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <span className="sr-only">Close</span>
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+          {/* Vulnerability Details Modal */}
+          {selectedHost && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-hidden">
+                <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Vulnerabilities for {selectedHost}
+                  </h3>
+                  <button
+                    onClick={() => setSelectedHost(null)}
+                    className="text-gray-400 hover:text-gray-600"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
+                    <span className="sr-only">Close</span>
+                    <svg
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
 
-              <div className="p-6 overflow-y-auto max-h-96">
-                {vulnLoading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
-                    <span className="ml-2 text-gray-600">
-                      Loading vulnerabilities...
-                    </span>
-                  </div>
-                ) : hostVulnerabilities.length === 0 ? (
-                  <div className="text-center py-8">
-                    <ShieldCheckIcon className="mx-auto h-12 w-12 text-green-500" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">
-                      No vulnerabilities found
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      This host has no recorded vulnerabilities.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {hostVulnerabilities
-                      .sort(
-                        (a, b) =>
-                          getSeverityOrder(a.severity) -
-                          getSeverityOrder(b.severity)
-                      )
-                      .map((vuln) => {
-                        const config =
-                          severityConfig[
-                            vuln.severity as keyof typeof severityConfig
-                          ] || severityConfig.info;
+                <div className="p-6 overflow-y-auto max-h-96">
+                  {vulnLoading ? (
+                    <div className="flex items-center justify-center h-32">
+                      <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
+                      <span className="ml-2 text-gray-600">
+                        Loading vulnerabilities...
+                      </span>
+                    </div>
+                  ) : hostVulnerabilities.length === 0 ? (
+                    <div className="text-center py-8">
+                      <ShieldCheckIcon className="mx-auto h-12 w-12 text-green-500" />
+                      <h3 className="mt-2 text-sm font-medium text-gray-900">
+                        No vulnerabilities found
+                      </h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        This host has no recorded vulnerabilities.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {hostVulnerabilities
+                        .sort(
+                          (a, b) =>
+                            getSeverityOrder(a.severity) -
+                            getSeverityOrder(b.severity)
+                        )
+                        .map((vuln) => {
+                          const config =
+                            severityConfig[
+                              vuln.severity as keyof typeof severityConfig
+                            ] || severityConfig.info;
 
-                        return (
-                          <div
-                            key={vuln.id}
-                            className={`${config.bgColor} border rounded-lg p-4`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">
-                                  {vuln.vulnerability_name}
-                                </h4>
-                                {vuln.cve_id && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {vuln.cve_id}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-2 ml-4">
-                                <config.icon
-                                  className={`h-4 w-4 ${config.color}`}
-                                />
-                                <span
-                                  className={`text-sm font-medium ${config.color} capitalize`}
-                                >
-                                  {vuln.severity}
-                                </span>
-                                {vuln.cvss_score && (
-                                  <span className="text-sm text-gray-600">
-                                    ({vuln.cvss_score})
+                          return (
+                            <div
+                              key={vuln.id}
+                              className={`${config.bgColor} border rounded-lg p-4`}
+                            >
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <h4 className="font-medium text-gray-900">
+                                    {vuln.vulnerability_name}
+                                  </h4>
+                                  {vuln.cve_id && (
+                                    <p className="text-sm text-gray-600 mt-1">
+                                      {vuln.cve_id}
+                                    </p>
+                                  )}
+                                </div>
+                                <div className="flex items-center space-x-2 ml-4">
+                                  <config.icon
+                                    className={`h-4 w-4 ${config.color}`}
+                                  />
+                                  <span
+                                    className={`text-sm font-medium ${config.color} capitalize`}
+                                  >
+                                    {vuln.severity}
                                   </span>
+                                  {vuln.cvss_score && (
+                                    <span className="text-sm text-gray-600">
+                                      ({vuln.cvss_score})
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              {vuln.description && (
+                                <p className="text-sm text-gray-700 mb-2 line-clamp-3">
+                                  {vuln.description}
+                                </p>
+                              )}
+
+                              <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                {vuln.port && <span>Port: {vuln.port}</span>}
+                                {vuln.protocol && (
+                                  <span>Protocol: {vuln.protocol}</span>
+                                )}
+                                {vuln.service && (
+                                  <span>Service: {vuln.service}</span>
                                 )}
                               </div>
                             </div>
-
-                            {vuln.description && (
-                              <p className="text-sm text-gray-700 mb-2 line-clamp-3">
-                                {vuln.description}
-                              </p>
-                            )}
-
-                            <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              {vuln.port && <span>Port: {vuln.port}</span>}
-                              {vuln.protocol && (
-                                <span>Protocol: {vuln.protocol}</span>
-                              )}
-                              {vuln.service && (
-                                <span>Service: {vuln.service}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        )}
-          </>
-        )}
-
-        {/* Vulnerability Details Modal */}
-        {selectedHost && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="text-lg font-medium text-gray-900">
-                  Vulnerabilities for {selectedHost}
-                </h3>
-                <button
-                  onClick={() => setSelectedHost(null)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <span className="sr-only">Close</span>
-                  <svg
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="p-6 overflow-y-auto max-h-96">
-                {vulnLoading ? (
-                  <div className="flex items-center justify-center h-32">
-                    <ArrowPathIcon className="h-6 w-6 animate-spin text-blue-600" />
-                    <span className="ml-2 text-gray-600">
-                      Loading vulnerabilities...
-                    </span>
-                  </div>
-                ) : hostVulnerabilities.length === 0 ? (
-                  <div className="text-center py-8">
-                    <ShieldCheckIcon className="mx-auto h-12 w-12 text-green-500" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">
-                      No vulnerabilities found
-                    </h3>
-                    <p className="mt-1 text-sm text-gray-500">
-                      This host has no recorded vulnerabilities.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {hostVulnerabilities
-                      .sort(
-                        (a, b) =>
-                          getSeverityOrder(a.severity) -
-                          getSeverityOrder(b.severity)
-                      )
-                      .map((vuln) => {
-                        const config =
-                          severityConfig[
-                            vuln.severity as keyof typeof severityConfig
-                          ] || severityConfig.info;
-
-                        return (
-                          <div
-                            key={vuln.id}
-                            className={`${config.bgColor} border rounded-lg p-4`}
-                          >
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-gray-900">
-                                  {vuln.vulnerability_name}
-                                </h4>
-                                {vuln.cve_id && (
-                                  <p className="text-sm text-gray-600 mt-1">
-                                    {vuln.cve_id}
-                                  </p>
-                                )}
-                              </div>
-                              <div className="flex items-center space-x-2 ml-4">
-                                <config.icon
-                                  className={`h-4 w-4 ${config.color}`}
-                                />
-                                <span
-                                  className={`text-sm font-medium ${config.color} capitalize`}
-                                >
-                                  {vuln.severity}
-                                </span>
-                                {vuln.cvss_score && (
-                                  <span className="text-sm text-gray-600">
-                                    ({vuln.cvss_score})
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-
-                            {vuln.description && (
-                              <p className="text-sm text-gray-700 mb-2 line-clamp-3">
-                                {vuln.description}
-                              </p>
-                            )}
-
-                            <div className="flex items-center space-x-4 text-xs text-gray-500">
-                              {vuln.port && <span>Port: {vuln.port}</span>}
-                              {vuln.protocol && (
-                                <span>Protocol: {vuln.protocol}</span>
-                              )}
-                              {vuln.service && (
-                                <span>Service: {vuln.service}</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
+          )}
         </div>
       </div>
     </AppLayout>
