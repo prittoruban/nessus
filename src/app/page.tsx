@@ -146,9 +146,7 @@ export default function DashboardPage() {
       patch_compliance: 0,
     },
   });
-  const [viewMode, setViewMode] = useState<
-    "charts" | "detailed" | "compliance" | "executive"
-  >("charts");
+  const [viewMode, setViewMode] = useState<"charts" | "executive">("charts");
 
   const fetchOrganizations = useCallback(async () => {
     try {
@@ -629,13 +627,6 @@ export default function DashboardPage() {
     }
   };
 
-  const getComplianceColor = (score: number) => {
-    if (score >= 80) return "text-green-700 bg-green-100";
-    if (score >= 60) return "text-yellow-700 bg-yellow-100";
-    if (score >= 40) return "text-orange-700 bg-orange-100";
-    return "text-red-700 bg-red-100";
-  };
-
   const calculateChange = (current: number, previous: number) => {
     if (previous === 0) return current > 0 ? 100 : 0;
     return ((current - previous) / previous) * 100;
@@ -717,34 +708,12 @@ export default function DashboardPage() {
         }
       : null;
 
-  const complianceChartData =
-    overviewStats.complianceData.length > 0
-      ? {
-          labels: overviewStats.complianceData.map((c) => c.framework),
-          datasets: [
-            {
-              label: "Compliance Score",
-              data: overviewStats.complianceData.map((c) => c.score),
-              backgroundColor: overviewStats.complianceData.map((c) =>
-                c.score >= 80
-                  ? "#10B981"
-                  : c.score >= 60
-                  ? "#F59E0B"
-                  : "#EF4444"
-              ),
-              borderRadius: 4,
-              borderSkipped: false,
-            },
-          ],
-        }
-      : null;
-
   const topVulnChartData =
     overviewStats.topVulnerabilities.length > 0
       ? {
           labels: overviewStats.topVulnerabilities
             .slice(0, 5)
-            .map((v) => v.name.substring(0, 30) + "..."),
+            .map((v) => v.name),
           datasets: [
             {
               label: "Occurrences",
@@ -836,20 +805,12 @@ export default function DashboardPage() {
                     <select
                       value={viewMode}
                       onChange={(e) =>
-                        setViewMode(
-                          e.target.value as
-                            | "charts"
-                            | "detailed"
-                            | "compliance"
-                            | "executive"
-                        )
+                        setViewMode(e.target.value as "charts" | "executive")
                       }
                       className="w-full sm:w-auto border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="executive">Executive Summary</option>
                       <option value="charts">Charts View</option>
-                      <option value="detailed">Detailed Analysis</option>
-                      <option value="compliance">Compliance View</option>
                     </select>
                   </div>
                 </div>
@@ -887,7 +848,7 @@ export default function DashboardPage() {
                   ) : (
                     <>
                       {/* Key Metrics */}
-                      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 lg:gap-4 mb-6">
                         <div className="text-center p-3 bg-gray-50 rounded-lg">
                           <div className="text-lg sm:text-2xl font-bold text-gray-900">
                             {selectedOrg.total_ips}
@@ -1015,6 +976,80 @@ export default function DashboardPage() {
                             </div>
                           )}
                         </div>
+                        <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                          <div className="text-lg sm:text-2xl font-bold text-yellow-600">
+                            {selectedOrg.medium_count}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-600">
+                            Medium
+                          </div>
+                          {overviewStats.previousIteration && (
+                            <div className="flex items-center justify-center mt-1">
+                              {selectedOrg.medium_count >
+                              overviewStats.previousIteration.medium_count ? (
+                                <ArrowTrendingUpIcon className="h-3 w-3 text-red-500 mr-1" />
+                              ) : selectedOrg.medium_count <
+                                overviewStats.previousIteration.medium_count ? (
+                                <ArrowTrendingDownIcon className="h-3 w-3 text-green-500 mr-1" />
+                              ) : null}
+                              <span
+                                className={`text-xs ${
+                                  selectedOrg.medium_count >
+                                  overviewStats.previousIteration.medium_count
+                                    ? "text-red-500"
+                                    : selectedOrg.medium_count <
+                                      overviewStats.previousIteration.medium_count
+                                    ? "text-green-500"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {formatChange(
+                                  calculateChange(
+                                    selectedOrg.medium_count,
+                                    overviewStats.previousIteration.medium_count
+                                  )
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-center p-3 bg-blue-50 rounded-lg">
+                          <div className="text-lg sm:text-2xl font-bold text-blue-600">
+                            {selectedOrg.low_count}
+                          </div>
+                          <div className="text-xs sm:text-sm text-gray-600">
+                            Low
+                          </div>
+                          {overviewStats.previousIteration && (
+                            <div className="flex items-center justify-center mt-1">
+                              {selectedOrg.low_count >
+                              overviewStats.previousIteration.low_count ? (
+                                <ArrowTrendingUpIcon className="h-3 w-3 text-red-500 mr-1" />
+                              ) : selectedOrg.low_count <
+                                overviewStats.previousIteration.low_count ? (
+                                <ArrowTrendingDownIcon className="h-3 w-3 text-green-500 mr-1" />
+                              ) : null}
+                              <span
+                                className={`text-xs ${
+                                  selectedOrg.low_count >
+                                  overviewStats.previousIteration.low_count
+                                    ? "text-red-500"
+                                    : selectedOrg.low_count <
+                                      overviewStats.previousIteration.low_count
+                                    ? "text-green-500"
+                                    : "text-gray-500"
+                                }`}
+                              >
+                                {formatChange(
+                                  calculateChange(
+                                    selectedOrg.low_count,
+                                    overviewStats.previousIteration.low_count
+                                  )
+                                )}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
 
                       {/* Enhanced view mode content */}
@@ -1022,7 +1057,7 @@ export default function DashboardPage() {
                         /* Executive Summary Dashboard */
                         <div className="space-y-6">
                           {/* Executive KPIs */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div
                               className={`p-4 rounded-lg border-2 ${getRiskLevelColor(
                                 overviewStats.executiveSummary
@@ -1064,21 +1099,6 @@ export default function DashboardPage() {
                                 </div>
                                 <div className="text-sm text-gray-600">
                                   Security Improvement
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="p-4 rounded-lg border bg-white">
-                              <div className="text-center">
-                                <div className="text-2xl font-bold text-blue-600">
-                                  {
-                                    overviewStats.executiveSummary
-                                      .patch_compliance
-                                  }
-                                  %
-                                </div>
-                                <div className="text-sm text-gray-600">
-                                  Patch Compliance
                                 </div>
                               </div>
                             </div>
@@ -1151,12 +1171,12 @@ export default function DashboardPage() {
                                   .map((vuln, index) => (
                                     <div
                                       key={index}
-                                      className="flex justify-between items-center"
+                                      className="flex justify-between items-start"
                                     >
-                                      <span className="text-sm text-gray-600 truncate mr-2">
-                                        {vuln.name.substring(0, 30)}...
+                                      <span className="text-sm text-gray-600 mr-2 flex-1">
+                                        {vuln.name}
                                       </span>
-                                      <div className="flex items-center space-x-2">
+                                      <div className="flex items-center space-x-2 flex-shrink-0">
                                         <span className="text-xs bg-gray-100 px-2 py-1 rounded">
                                           {vuln.affected_hosts} hosts
                                         </span>
@@ -1178,115 +1198,10 @@ export default function DashboardPage() {
                             </div>
                           </div>
 
-                          {/* Compliance Overview */}
+                          {/* IP Address Breakdown */}
                           <div className="bg-white rounded-lg border p-6">
                             <h4 className="text-lg font-semibold text-gray-900 mb-4">
-                              Compliance Framework Status
-                            </h4>
-                            <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
-                              <p className="text-sm text-amber-800">
-                                <strong>Note:</strong> Compliance scores are
-                                estimated based on vulnerability risk analysis.
-                                Formal compliance certification requires
-                                official audits.
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                              {overviewStats.complianceData.map(
-                                (framework, index) => (
-                                  <div
-                                    key={index}
-                                    className="p-4 border rounded-lg"
-                                  >
-                                    <div className="text-center">
-                                      <div
-                                        className={`text-xl font-bold ${getComplianceColor(
-                                          framework.score
-                                        )}`}
-                                      >
-                                        {framework.score}%
-                                      </div>
-                                      <div className="text-sm font-medium text-gray-900 mt-1">
-                                        {framework.framework}
-                                      </div>
-                                      <div className="text-xs text-gray-500 mt-2">
-                                        {framework.passed}/{framework.total}{" "}
-                                        controls passed
-                                      </div>
-                                      {framework.description && (
-                                        <div className="text-xs text-gray-400 mt-1">
-                                          {framework.description}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      ) : viewMode === "compliance" ? (
-                        /* Compliance Analysis View */
-                        <div className="space-y-4 lg:space-y-6">
-                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-                            {/* Compliance Scores Chart */}
-                            {complianceChartData && (
-                              <div className="bg-white rounded-lg border p-4 lg:p-6">
-                                <h4 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
-                                  Compliance Scores
-                                </h4>
-                                <div className="h-48 sm:h-64">
-                                  <Bar
-                                    data={complianceChartData}
-                                    options={{
-                                      responsive: true,
-                                      maintainAspectRatio: false,
-                                      scales: {
-                                        y: {
-                                          beginAtZero: true,
-                                          max: 100,
-                                        },
-                                      },
-                                      plugins: {
-                                        legend: {
-                                          display: false,
-                                        },
-                                      },
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Top Vulnerabilities */}
-                            {topVulnChartData && (
-                              <div className="bg-white rounded-lg border p-4 lg:p-6">
-                                <h4 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
-                                  Most Common Vulnerabilities
-                                </h4>
-                                <div className="h-48 sm:h-64">
-                                  <Bar
-                                    data={topVulnChartData}
-                                    options={{
-                                      responsive: true,
-                                      maintainAspectRatio: false,
-                                      indexAxis: "y" as const,
-                                      plugins: {
-                                        legend: {
-                                          display: false,
-                                        },
-                                      },
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Detailed Compliance Table */}
-                          <div className="bg-white rounded-lg border p-4 lg:p-6">
-                            <h4 className="text-base lg:text-lg font-semibold text-gray-900 mb-4">
-                              Detailed Compliance Analysis
+                              IP Address Breakdown
                             </h4>
                             <div className="overflow-x-auto -mx-4 lg:mx-0">
                               <div className="min-w-full inline-block align-middle">
@@ -1295,299 +1210,146 @@ export default function DashboardPage() {
                                     <thead className="bg-gray-50">
                                       <tr>
                                         <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                          Framework
-                                        </th>
-                                        <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                          Score
+                                          IP Address
                                         </th>
                                         <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                                          Passed
-                                        </th>
-                                        <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                                          Failed
+                                          Hostname
                                         </th>
                                         <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                          Status
+                                          Total
+                                        </th>
+                                        <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                          Critical
+                                        </th>
+                                        <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                          High
+                                        </th>
+                                        <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                          Medium
+                                        </th>
+                                        <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                          Low
                                         </th>
                                       </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                      {overviewStats.complianceData.map(
-                                        (framework, index) => (
+                                      {overviewStats.ipBreakdown
+                                        .slice(0, 10)
+                                        .map((ip, index) => (
                                           <tr key={index}>
                                             <td className="px-3 lg:px-6 py-4 text-sm font-medium text-gray-900">
-                                              <div className="truncate max-w-[120px] sm:max-w-none">
-                                                {framework.framework}
-                                              </div>
+                                              {ip.ip_address}
+                                            </td>
+                                            <td className="px-3 lg:px-6 py-4 text-sm text-gray-600 hidden sm:table-cell">
+                                              {ip.hostname || "N/A"}
                                             </td>
                                             <td className="px-3 lg:px-6 py-4 text-sm text-gray-900">
-                                              <div className="flex items-center">
-                                                <div className="w-12 sm:w-16 bg-gray-200 rounded-full h-2 mr-2 sm:mr-3">
-                                                  <div
-                                                    className={`h-2 rounded-full ${
-                                                      framework.score >= 80
-                                                        ? "bg-green-500"
-                                                        : framework.score >= 60
-                                                        ? "bg-yellow-500"
-                                                        : "bg-red-500"
-                                                    }`}
-                                                    style={{
-                                                      width: `${framework.score}%`,
-                                                    }}
-                                                  ></div>
-                                                </div>
-                                                <span className="font-medium text-xs sm:text-sm">
-                                                  {framework.score}%
-                                                </span>
-                                              </div>
+                                              {ip.total_vulnerabilities}
                                             </td>
-                                            <td className="px-3 lg:px-6 py-4 text-sm text-green-600 hidden sm:table-cell">
-                                              {framework.passed}
+                                            <td className="px-3 lg:px-6 py-4 text-sm text-red-600">
+                                              {ip.critical_count}
                                             </td>
-                                            <td className="px-3 lg:px-6 py-4 text-sm text-red-600 hidden sm:table-cell">
-                                              {framework.failed}
+                                            <td className="px-3 lg:px-6 py-4 text-sm text-orange-600">
+                                              {ip.high_count}
                                             </td>
-                                            <td className="px-3 lg:px-6 py-4">
-                                              <span
-                                                className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                  framework.score >= 80
-                                                    ? "bg-green-100 text-green-800"
-                                                    : framework.score >= 60
-                                                    ? "bg-yellow-100 text-yellow-800"
-                                                    : "bg-red-100 text-red-800"
-                                                }`}
-                                              >
-                                                {framework.score >= 80
-                                                  ? "Compliant"
-                                                  : framework.score >= 60
-                                                  ? "Partial"
-                                                  : "Non-compliant"}
-                                              </span>
+                                            <td className="px-3 lg:px-6 py-4 text-sm text-yellow-600">
+                                              {ip.medium_count}
+                                            </td>
+                                            <td className="px-3 lg:px-6 py-4 text-sm text-blue-600">
+                                              {ip.low_count}
                                             </td>
                                           </tr>
-                                        )
-                                      )}
+                                        ))}
                                     </tbody>
                                   </table>
                                 </div>
                               </div>
                             </div>
-
-                            {/* Compliance Assessment Disclaimer */}
-                            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                              <div className="flex items-start">
-                                <div className="flex-shrink-0">
-                                  <svg
-                                    className="h-5 w-5 text-blue-400"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                  >
-                                    <path
-                                      fillRule="evenodd"
-                                      d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                                      clipRule="evenodd"
-                                    />
-                                  </svg>
-                                </div>
-                                <div className="ml-3">
-                                  <h3 className="text-sm font-medium text-blue-800">
-                                    Compliance Assessment Notice
-                                  </h3>
-                                  <div className="mt-2 text-sm text-blue-700">
-                                    <p className="mb-2">
-                                      <strong>
-                                        These scores are risk-based estimates
-                                      </strong>{" "}
-                                      derived from vulnerability analysis, not
-                                      formal compliance audits.
-                                    </p>
-                                    <ul className="list-disc list-inside space-y-1">
-                                      <li>
-                                        Calculations map vulnerability severity
-                                        to framework control areas
-                                      </li>
-                                      <li>
-                                        Actual compliance requires formal audits
-                                        by certified assessors
-                                      </li>
-                                      <li>
-                                        Use these metrics as security posture
-                                        indicators, not compliance certification
-                                      </li>
-                                      <li>
-                                        Critical and high vulnerabilities
-                                        significantly impact compliance scores
-                                      </li>
-                                    </ul>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
                           </div>
                         </div>
-                      ) : viewMode === "charts" ? (
-                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-                          {/* Severity Distribution Chart */}
-                          {severityChartData && (
+                      ) : (
+                        <div className="space-y-6">
+                          {/* Most Common Vulnerabilities Chart - First */}
+                          {topVulnChartData && (
                             <div className="bg-white rounded-lg border p-4 lg:p-6">
                               <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
-                                Vulnerability Distribution
+                                Most Common Vulnerabilities
                               </h3>
-                              <div className="h-48 sm:h-64">
-                                <Pie
-                                  data={severityChartData}
+                              <div className="h-64 sm:h-80">
+                                <Bar
+                                  data={topVulnChartData}
                                   options={{
                                     responsive: true,
                                     maintainAspectRatio: false,
+                                    indexAxis: "y" as const,
                                     plugins: {
                                       legend: {
-                                        position: "bottom",
-                                        labels: {
-                                          boxWidth: 12,
-                                          font: {
-                                            size: 11,
+                                        display: false,
+                                      },
+                                    },
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
+                            {/* Severity Distribution Chart */}
+                            {severityChartData && (
+                              <div className="bg-white rounded-lg border p-4 lg:p-6">
+                                <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
+                                  Vulnerability Distribution
+                                </h3>
+                                <div className="h-48 sm:h-64">
+                                  <Pie
+                                    data={severityChartData}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: {
+                                          position: "bottom",
+                                          labels: {
+                                            boxWidth: 12,
+                                            font: {
+                                              size: 11,
+                                            },
                                           },
                                         },
                                       },
-                                    },
-                                  }}
-                                />
+                                    }}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          )}
+                            )}
 
-                          {/* Trend Chart */}
-                          {trendChartData && (
-                            <div className="bg-white rounded-lg border p-4 lg:p-6">
-                              <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
-                                Vulnerability Trends
-                              </h3>
-                              <div className="h-48 sm:h-64">
-                                <Line
-                                  data={trendChartData}
-                                  options={{
-                                    responsive: true,
-                                    maintainAspectRatio: false,
-                                    scales: {
-                                      y: {
-                                        beginAtZero: true,
+                            {/* Trend Chart */}
+                            {trendChartData && (
+                              <div className="bg-white rounded-lg border p-4 lg:p-6">
+                                <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
+                                  Vulnerability Trends
+                                </h3>
+                                <div className="h-48 sm:h-64">
+                                  <Line
+                                    data={trendChartData}
+                                    options={{
+                                      responsive: true,
+                                      maintainAspectRatio: false,
+                                      scales: {
+                                        y: {
+                                          beginAtZero: true,
+                                        },
                                       },
-                                    },
-                                    plugins: {
-                                      legend: {
-                                        position: "bottom",
+                                      plugins: {
+                                        legend: {
+                                          position: "bottom",
+                                        },
                                       },
-                                    },
-                                  }}
-                                />
+                                    }}
+                                  />
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        /* Detailed IP Breakdown */
-                        <div className="bg-white rounded-lg border p-4 lg:p-6">
-                          <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
-                            IP Address Breakdown
-                          </h3>
-                          <div className="overflow-x-auto -mx-4 lg:mx-0">
-                            <div className="min-w-full inline-block align-middle">
-                              <div className="overflow-hidden border border-gray-200 md:rounded-lg">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                  <thead className="bg-gray-50">
-                                    <tr>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        IP Address
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">
-                                        Hostname
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Total
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                                        Critical
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">
-                                        High
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                                        Medium
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">
-                                        Low
-                                      </th>
-                                      <th className="px-3 lg:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Change
-                                      </th>
-                                    </tr>
-                                  </thead>
-                                  <tbody className="bg-white divide-y divide-gray-200">
-                                    {overviewStats.ipBreakdown.map(
-                                      (ip, index) => (
-                                        <tr
-                                          key={index}
-                                          className="hover:bg-gray-50"
-                                        >
-                                          <td className="px-3 lg:px-6 py-4 text-sm font-medium text-gray-900">
-                                            <div className="truncate max-w-[100px] sm:max-w-none">
-                                              {ip.ip_address}
-                                            </div>
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm text-gray-500 hidden sm:table-cell">
-                                            <div className="truncate max-w-[120px] lg:max-w-none">
-                                              {ip.hostname || "-"}
-                                            </div>
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm text-gray-900">
-                                            {ip.total_vulnerabilities}
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm text-red-600 hidden md:table-cell">
-                                            {ip.critical_count}
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm text-orange-600 hidden md:table-cell">
-                                            {ip.high_count}
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm text-yellow-600 hidden lg:table-cell">
-                                            {ip.medium_count}
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm text-blue-600 hidden lg:table-cell">
-                                            {ip.low_count}
-                                          </td>
-                                          <td className="px-3 lg:px-6 py-4 text-sm">
-                                            {ip.change !== undefined ? (
-                                              <div className="flex items-center">
-                                                {ip.change > 0 ? (
-                                                  <ArrowTrendingUpIcon className="h-4 w-4 text-red-500 mr-1" />
-                                                ) : ip.change < 0 ? (
-                                                  <ArrowTrendingDownIcon className="h-4 w-4 text-green-500 mr-1" />
-                                                ) : null}
-                                                <span
-                                                  className={`${
-                                                    ip.change > 0
-                                                      ? "text-red-500"
-                                                      : ip.change < 0
-                                                      ? "text-green-500"
-                                                      : "text-gray-500"
-                                                  }`}
-                                                >
-                                                  {ip.change > 0 ? "+" : ""}
-                                                  {ip.change}
-                                                </span>
-                                              </div>
-                                            ) : (
-                                              <span className="text-gray-400">
-                                                New
-                                              </span>
-                                            )}
-                                          </td>
-                                        </tr>
-                                      )
-                                    )}
-                                  </tbody>
-                                </table>
-                              </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       )}
