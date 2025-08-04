@@ -23,14 +23,23 @@ export default function BackToTop() {
   useEffect(() => {
     // Find the scrollable container (main element with overflow-y-auto)
     const findScrollContainer = () => {
-      const mainElement = document.querySelector('main.overflow-y-auto')
-      return mainElement as HTMLElement
+      // Try multiple selectors to find the scrollable container
+      let mainElement = document.querySelector('main.overflow-y-auto') as HTMLElement
+      if (!mainElement) {
+        mainElement = document.querySelector('main') as HTMLElement
+      }
+      if (!mainElement) {
+        // Fallback to document element for window scrolling
+        return document.documentElement
+      }
+      return mainElement
     }
 
     const toggleVisibility = () => {
       const container = scrollContainerRef.current || findScrollContainer()
       if (container) {
-        if (container.scrollTop > 300) {
+        const scrollTop = container === document.documentElement ? window.pageYOffset : container.scrollTop
+        if (scrollTop > 300) {
           setIsVisible(true)
         } else {
           setIsVisible(false)
@@ -44,13 +53,23 @@ export default function BackToTop() {
     const container = findScrollContainer()
     if (container) {
       scrollContainerRef.current = container
-      container.addEventListener('scroll', throttledToggleVisibility)
+      
+      // Add event listener based on container type
+      if (container === document.documentElement) {
+        window.addEventListener('scroll', throttledToggleVisibility)
+      } else {
+        container.addEventListener('scroll', throttledToggleVisibility)
+      }
       
       // Initial check
       toggleVisibility()
 
       return () => {
-        container.removeEventListener('scroll', throttledToggleVisibility)
+        if (container === document.documentElement) {
+          window.removeEventListener('scroll', throttledToggleVisibility)
+        } else {
+          container.removeEventListener('scroll', throttledToggleVisibility)
+        }
       }
     }
   }, [throttle])
@@ -58,10 +77,19 @@ export default function BackToTop() {
   const scrollToTop = () => {
     const container = scrollContainerRef.current
     if (container) {
-      container.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      })
+      if (container === document.documentElement) {
+        // Use window.scrollTo for document scrolling
+        window.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        })
+      } else {
+        // Use container.scrollTo for element scrolling
+        container.scrollTo({
+          top: 0,
+          behavior: 'smooth'
+        })
+      }
     } else {
       // Fallback to window scroll
       window.scrollTo({

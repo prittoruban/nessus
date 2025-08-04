@@ -24,7 +24,7 @@ import {
   RadialLinearScale,
   Filler,
 } from "chart.js";
-import { Pie, Line, Bar } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 
 // Register Chart.js components
 ChartJS.register(
@@ -454,10 +454,10 @@ export default function DashboardPage() {
         }
       }
 
-      // Get trend data (last 6-10 iterations)
+      // Get trend data (last 5 iterations)
       const trendData = reports
         .reverse()
-        .slice(-6)
+        .slice(-5)
         .map((report) => ({
           date: new Date(report.scan_end_date).toLocaleDateString(),
           critical: report.critical_count,
@@ -638,35 +638,8 @@ export default function DashboardPage() {
     return `${sign}${change.toFixed(1)}%`;
   };
 
-  // Enhanced Chart configurations
-  const severityChartData = selectedOrg
-    ? {
-        labels: ["Critical", "High", "Medium", "Low", "Info"],
-        datasets: [
-          {
-            label: "Vulnerabilities",
-            data: [
-              selectedOrg.critical_count,
-              selectedOrg.high_count,
-              selectedOrg.medium_count,
-              selectedOrg.low_count,
-              selectedOrg.info_count,
-            ],
-            backgroundColor: [
-              "#DC2626", // red-600
-              "#EA580C", // orange-600
-              "#D97706", // amber-600
-              "#2563EB", // blue-600
-              "#6B7280", // gray-500
-            ],
-            borderWidth: 2,
-            borderColor: "#FFFFFF",
-          },
-        ],
-      }
-    : null;
-
-  const trendChartData =
+  // Combined Vulnerability Trends Bar Chart (Past 5 Iterations)
+  const combinedVulnTrendData =
     overviewStats.trendData.length > 0
       ? {
           labels: overviewStats.trendData.map((d) => d.date),
@@ -674,35 +647,37 @@ export default function DashboardPage() {
             {
               label: "Critical",
               data: overviewStats.trendData.map((d) => d.critical),
+              backgroundColor: "#DC2626",
               borderColor: "#DC2626",
-              backgroundColor: "#DC262620",
-              tension: 0.4,
-              fill: false,
+              borderWidth: 1,
             },
             {
               label: "High",
               data: overviewStats.trendData.map((d) => d.high),
+              backgroundColor: "#EA580C",
               borderColor: "#EA580C",
-              backgroundColor: "#EA580C20",
-              tension: 0.4,
-              fill: false,
+              borderWidth: 1,
             },
             {
               label: "Medium",
               data: overviewStats.trendData.map((d) => d.medium),
+              backgroundColor: "#D97706",
               borderColor: "#D97706",
-              backgroundColor: "#D9770620",
-              tension: 0.4,
-              fill: false,
+              borderWidth: 1,
             },
             {
-              label: "Total",
-              data: overviewStats.trendData.map((d) => d.total),
-              borderColor: "#374151",
-              backgroundColor: "#37415120",
-              tension: 0.4,
-              fill: true,
-              borderDash: [5, 5],
+              label: "Low",
+              data: overviewStats.trendData.map((d) => d.low),
+              backgroundColor: "#2563EB",
+              borderColor: "#2563EB",
+              borderWidth: 1,
+            },
+            {
+              label: "Info",
+              data: overviewStats.trendData.map((d) => d.info),
+              backgroundColor: "#6B7280",
+              borderColor: "#6B7280",
+              borderWidth: 1,
             },
           ],
         }
@@ -1293,22 +1268,39 @@ export default function DashboardPage() {
                             </div>
                           )}
 
-                          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 lg:gap-6">
-                            {/* Severity Distribution Chart */}
-                            {severityChartData && (
+                          <div className="space-y-6">
+                            {/* Combined Vulnerability Trends Chart - Replaces Distribution and Trends */}
+                            {combinedVulnTrendData && (
                               <div className="bg-white rounded-lg border p-4 lg:p-6">
                                 <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
-                                  Vulnerability Distribution
+                                  Vulnerability Trends - Past 5 Iterations
                                 </h3>
-                                <div className="h-48 sm:h-64">
-                                  <Pie
-                                    data={severityChartData}
+                                <div className="h-64 sm:h-80">
+                                  <Bar
+                                    data={combinedVulnTrendData}
                                     options={{
                                       responsive: true,
                                       maintainAspectRatio: false,
+                                      scales: {
+                                        x: {
+                                          stacked: false,
+                                          title: {
+                                            display: true,
+                                            text: 'Scan Date'
+                                          }
+                                        },
+                                        y: {
+                                          beginAtZero: true,
+                                          stacked: false,
+                                          title: {
+                                            display: true,
+                                            text: 'Number of Vulnerabilities'
+                                          }
+                                        },
+                                      },
                                       plugins: {
                                         legend: {
-                                          position: "bottom",
+                                          position: "top",
                                           labels: {
                                             boxWidth: 12,
                                             font: {
@@ -1316,34 +1308,14 @@ export default function DashboardPage() {
                                             },
                                           },
                                         },
-                                      },
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Trend Chart */}
-                            {trendChartData && (
-                              <div className="bg-white rounded-lg border p-4 lg:p-6">
-                                <h3 className="text-base lg:text-lg font-medium text-gray-900 mb-4">
-                                  Vulnerability Trends
-                                </h3>
-                                <div className="h-48 sm:h-64">
-                                  <Line
-                                    data={trendChartData}
-                                    options={{
-                                      responsive: true,
-                                      maintainAspectRatio: false,
-                                      scales: {
-                                        y: {
-                                          beginAtZero: true,
+                                        tooltip: {
+                                          mode: 'index',
+                                          intersect: false,
                                         },
                                       },
-                                      plugins: {
-                                        legend: {
-                                          position: "bottom",
-                                        },
+                                      interaction: {
+                                        mode: 'index',
+                                        intersect: false,
                                       },
                                     }}
                                   />
