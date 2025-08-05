@@ -350,39 +350,47 @@ ALTER TABLE vulnerabilities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE report_comparisons ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
 
--- Basic RLS policies (can be customized based on your auth requirements)
--- For now, allowing all authenticated users to access all data
--- You can modify these based on your specific access control needs
+-- Development-friendly RLS policies
+-- Note: These are permissive policies for development. 
+-- In production, implement proper authentication and authorization.
 
-CREATE POLICY "Allow all for authenticated users" ON organizations
-    FOR ALL USING (auth.role() = 'authenticated');
+-- Drop any existing restrictive policies first
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON organizations;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON reports;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON report_hosts;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON vulnerabilities;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON report_comparisons;
+DROP POLICY IF EXISTS "Allow all for authenticated users" ON audit_log;
 
-CREATE POLICY "Allow all for authenticated users" ON reports
-    FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow all for authenticated users" ON report_hosts
-    FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow all for authenticated users" ON vulnerabilities
-    FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow all for authenticated users" ON report_comparisons
-    FOR ALL USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Allow all for authenticated users" ON audit_log
-    FOR ALL USING (auth.role() = 'authenticated');
+-- Create permissive policies for development
+CREATE POLICY "Allow all operations" ON organizations FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON reports FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON report_hosts FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON vulnerabilities FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON report_comparisons FOR ALL USING (true);
+CREATE POLICY "Allow all operations" ON audit_log FOR ALL USING (true);
 
 -- =====================================================
--- SAMPLE DATA FOR TESTING
+-- PRODUCTION RLS POLICIES (COMMENTED OUT)
 -- =====================================================
+-- Uncomment and customize these for production use
 
--- Insert sample organizations
-INSERT INTO organizations (name, source_type) VALUES
-    ('HTC Global Services', 'internal'),
-    ('ABC Corporation', 'external'),
-    ('XYZ Limited', 'internal'),
-    ('Tech Solutions Inc', 'external')
-ON CONFLICT DO NOTHING;
+/*
+-- Example: Organization-based access control
+CREATE POLICY "Users can access their organization data" ON organizations
+    FOR ALL USING (
+        auth.jwt() ->> 'org_id' = id::text OR 
+        auth.jwt() ->> 'role' = 'admin'
+    );
+
+CREATE POLICY "Users can access their organization reports" ON reports
+    FOR ALL USING (
+        auth.jwt() ->> 'org_id' = org_id::text OR 
+        auth.jwt() ->> 'role' = 'admin'
+    );
+
+-- Similar policies for other tables...
+*/
 
 -- =====================================================
 -- USEFUL VIEWS FOR REPORTING
@@ -467,8 +475,13 @@ BEGIN
     RAISE NOTICE 'Indexes created for optimal performance';
     RAISE NOTICE 'Triggers created for automatic count updates';
     RAISE NOTICE 'Views created for easy reporting';
-    RAISE NOTICE 'RLS enabled with basic policies';
+    RAISE NOTICE 'RLS enabled with development-friendly policies';
     RAISE NOTICE 'Sample organizations inserted';
+    RAISE NOTICE '==============================================';
+    RAISE NOTICE 'DEVELOPMENT NOTES:';
+    RAISE NOTICE '- Current RLS policies allow all operations for development';
+    RAISE NOTICE '- For production, uncomment and customize the production RLS policies';
+    RAISE NOTICE '- Review security settings before deploying to production';
     RAISE NOTICE '==============================================';
     RAISE NOTICE 'Ready to start building your Nessus VA Portal!';
     RAISE NOTICE '==============================================';
