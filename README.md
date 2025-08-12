@@ -1,159 +1,264 @@
-# Nessus VA Report Portal
+# Nessus Vulnerability Assessment Portal
 
-A comprehensive web application for managing and visualizing Nessus vulnerability assessment reports. Built with Next.js, TypeScript, Supabase, and TailwindCSS.
+A comprehensive web-based vulnerability assessment reporting platform built with Next.js, designed to streamline the management and analysis of Nessus security scan results.
 
-## Features
+## 🚀 Features
 
-- 📊 **Dashboard Analytics** - Overview of vulnerability statistics and trends
-- 📄 **Report Management** - Upload, view, and manage Nessus scan reports
-- 🏢 **Organization Support** - Handle both internal and external assessments
-- 📈 **Data Visualization** - Charts and graphs for vulnerability metrics
-- 🔒 **Secure Database** - Row Level Security (RLS) with Supabase
-- 📱 **Responsive Design** - Works on desktop and mobile devices
-- 🖨️ **PDF Generation** - Generate professional vulnerability reports
+- **Interactive Dashboard** - Executive-level vulnerability analytics and insights
+- **CSV File Upload** - Seamless Nessus scan data import and processing
+- **Report Management** - Comprehensive vulnerability report generation and tracking
+- **Risk Analytics** - Advanced vulnerability trend analysis and compliance scoring
+- **PDF Export** - Professional vulnerability assessment report generation
+- **Multi-Organization Support** - Internal and external assessment management
+- **Real-time Data** - Live vulnerability metrics and statistics
 
-## Tech Stack
+## 🏗️ Technology Stack
 
-- **Frontend**: Next.js 15, React 19, TypeScript
-- **Styling**: TailwindCSS 4
-- **Database**: Supabase (PostgreSQL)
-- **Charts**: Chart.js with react-chartjs-2
-- **Icons**: Heroicons
-- **File Processing**: Papa Parse (CSV), Multer (file uploads)
-- **PDF Generation**: Puppeteer
+- **Frontend**: Next.js 15.4.2 with TypeScript
+- **UI Framework**: Tailwind CSS 4 with custom components
+- **Database**: Supabase (PostgreSQL) with Row Level Security
+- **Charts**: Chart.js with React Chart.js 2
+- **PDF Generation**: Puppeteer for report exports
+- **File Processing**: Papa Parse for CSV handling
+- **Authentication**: Supabase Auth
+- **Deployment**: Vercel-ready configuration
 
-## Prerequisites
+## 📁 Project Structure
+
+```
+nessus/
+├── database/
+│   └── schema.sql                    # Complete PostgreSQL database schema
+├── public/
+│   ├── HTC.png                      # Company logo assets
+│   └── Methodology.png              # Assessment methodology diagrams
+├── src/
+│   ├── app/                         # Next.js App Router
+│   │   ├── api/                     # API Routes
+│   │   │   ├── pdf/generate/[reportId]/
+│   │   │   │   └── route.ts         # PDF report generation endpoint
+│   │   │   ├── test-connection/
+│   │   │   │   └── route.ts         # Database connectivity testing
+│   │   │   └── upload-scan/
+│   │   │       └── route.ts         # CSV file upload and processing
+│   │   ├── insights/
+│   │   │   └── page.tsx             # Risk insights and analytics dashboard
+│   │   ├── reports/
+│   │   │   ├── page.tsx             # Reports listing and management
+│   │   │   └── [id]/
+│   │   │       └── page.tsx         # Individual report detail view
+│   │   ├── upload/
+│   │   │   └── page.tsx             # Multi-step CSV upload wizard
+│   │   ├── globals.css              # Global styles and Tailwind configuration
+│   │   ├── layout.tsx               # Root layout with metadata
+│   │   └── page.tsx                 # Main dashboard with analytics
+│   ├── components/                  # Reusable React components
+│   │   ├── AppLayout.tsx            # Main application layout wrapper
+│   │   ├── BackToTop.tsx            # Scroll-to-top functionality
+│   │   ├── ConnectionTest.tsx       # Database connection testing
+│   │   ├── SearchFilters.tsx        # Advanced filtering components
+│   │   └── Sidebar.tsx              # Navigation sidebar with collapse
+│   └── lib/                         # Utilities and configurations
+│       ├── supabase-server.ts       # Server-side Supabase client
+│       └── supabase.ts              # Client-side Supabase configuration
+├── eslint.config.mjs                # ESLint configuration
+├── next-env.d.ts                    # Next.js TypeScript declarations
+├── next.config.ts                   # Next.js configuration
+├── package.json                     # Dependencies and scripts
+├── postcss.config.mjs               # PostCSS configuration
+└── tsconfig.json                    # TypeScript configuration
+```
+
+## 🗄️ Database Schema
+
+The application uses a comprehensive PostgreSQL schema designed for vulnerability management:
+
+### Core Tables
+
+- **organizations** - Manages internal and external assessment targets
+- **reports** - Vulnerability assessment report headers with metadata
+- **report_hosts** - Individual IP addresses scanned per report
+- **vulnerabilities** - Detailed CVE and vulnerability information
+- **report_comparisons** - Historical trend analysis between iterations
+- **audit_log** - Complete audit trail for compliance
+
+### Key Features
+
+- **Automated Triggers** - Real-time summary count updates
+- **Row Level Security** - Configurable access control
+- **Performance Indexes** - Optimized for large-scale data
+- **Referential Integrity** - Complete data consistency
+
+## 🔧 File Descriptions
+
+### Frontend Components
+
+#### Core Pages
+- **`src/app/page.tsx`** - Executive dashboard with vulnerability analytics, charts, and compliance scoring
+- **`src/app/upload/page.tsx`** - Three-step wizard for uploading Nessus CSV files with validation
+- **`src/app/reports/page.tsx`** - Searchable report management interface with export capabilities
+- **`src/app/insights/page.tsx`** - Advanced risk analytics and trend visualization
+
+#### Layout & Navigation
+- **`src/components/AppLayout.tsx`** - Main layout wrapper with animation and responsive design
+- **`src/components/Sidebar.tsx`** - Collapsible navigation with tooltips and mobile support
+- **`src/components/SearchFilters.tsx`** - Advanced filtering for organizations and reports
+
+#### Utility Components
+- **`src/components/BackToTop.tsx`** - Smooth scroll-to-top functionality
+- **`src/components/ConnectionTest.tsx`** - Real-time database connectivity testing
+
+### Backend API Routes
+
+#### Data Processing
+- **`src/app/api/upload-scan/route.ts`** - Comprehensive CSV processing with validation, organization management, and vulnerability parsing
+- **`src/app/api/test-connection/route.ts`** - Database health check and connectivity testing
+
+#### Report Generation
+- **`src/app/api/pdf/generate/[reportId]/route.ts`** - Professional PDF report generation with charts and executive summaries
+
+### Configuration & Setup
+
+#### Database
+- **`database/schema.sql`** - Complete database schema with triggers, views, and RLS policies
+
+#### Configuration Files
+- **`package.json`** - All dependencies including Chart.js, Supabase, Puppeteer, and development tools
+- **`next.config.ts`** - Next.js configuration for Supabase integration
+- **`tsconfig.json`** - TypeScript configuration with strict type checking
+- **`tailwind.config.js`** - Custom Tailwind CSS configuration
+
+#### Utilities
+- **`src/lib/supabase.ts`** - Client-side Supabase configuration
+- **`src/lib/supabase-server.ts`** - Server-side Supabase client for API routes
+
+## 🚀 Getting Started
+
+### Prerequisites
 
 - Node.js 18+ 
-- npm, yarn, pnpm, or bun
-- Supabase account and project
+- PostgreSQL database (or Supabase account)
+- Git
 
-## Getting Started
+### Installation
 
-### 1. Clone the repository
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/prittoruban/nessus.git
+   cd nessus
+   ```
 
-```bash
-git clone <repository-url>
-cd nessus
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### 2. Install dependencies
+3. **Environment Setup**
+   Create a `.env.local` file:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+   ```
 
-```bash
-npm install
-# or
-yarn install
-# or
-pnpm install
-# or
-bun install
-```
+4. **Database Setup**
+   ```bash
+   # Run the schema in your Supabase SQL editor
+   psql -f database/schema.sql your_database_url
+   ```
 
-### 3. Environment Setup
+5. **Start Development Server**
+   ```bash
+   npm run dev
+   ```
 
-Create a `.env.local` file in the root directory:
+6. **Access the application**
+   Open [http://localhost:3000](http://localhost:3000)
 
-```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-```
+## 📊 Core Functionality
 
-### 4. Database Setup
-
-1. Create a new Supabase project
-2. Run the SQL schema from `database/schema.sql` in your Supabase SQL editor
-3. Apply any additional fixes from `database/temp-rls-fix.sql` if needed
-
-### 5. Run the development server
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
-
-## Project Structure
-
-```
-src/
-├── app/                    # Next.js App Router
-│   ├── api/               # API routes
-│   │   ├── pdf/generate/  # PDF generation endpoint
-│   │   ├── test-connection/ # Database connection test
-│   │   └── upload-scan/   # Scan upload handler
-│   ├── reports/           # Reports pages
-│   └── upload/            # Upload interface
-├── components/            # Reusable React components
-├── lib/                   # Utility libraries
-└── types/                 # TypeScript type definitions
-```
-
-## Key Features
-
-### Upload Nessus Reports
-- Support for .nessus XML files
-- Automatic parsing and data extraction
-- Organization assignment (internal/external)
+### CSV Upload & Processing
+- **Multi-step wizard** with organization selection
+- **Flexible CSV parsing** with automatic field detection
+- **Data validation** and error handling
+- **Iteration tracking** for historical comparisons
 
 ### Dashboard Analytics
-- Total vulnerability counts
-- Critical vulnerability tracking
-- Recent activity monitoring
-- Organization statistics
+- **Executive metrics** with risk scoring
+- **Vulnerability distribution** charts
+- **Compliance framework** scoring (CIS, NIST, ISO 27001)
+- **Trend analysis** across multiple assessments
 
-### Report Viewing
-- Detailed vulnerability listings
-- Filterable and sortable data
-- Export capabilities
-- PDF report generation
+### Report Management
+- **Searchable interface** with advanced filtering
+- **PDF export** with professional formatting
+- **Status tracking** (processing, completed, failed)
+- **Bulk operations** support
 
-## Available Scripts
+### Risk Analytics
+- **Vulnerability trends** over time
+- **Host-level breakdown** with risk scoring
+- **Compliance scoring** against security frameworks
+- **Executive summaries** with actionable insights
 
-- `npm run dev` - Start development server with Turbopack
-- `npm run build` - Build for production
-- `npm run start` - Start production server
-- `npm run lint` - Run ESLint
+## 🔒 Security Features
 
-## Database Schema
+- **Row Level Security (RLS)** for multi-tenant access
+- **Input validation** with Zod schemas
+- **SQL injection protection** via parameterized queries
+- **File upload restrictions** with type and size validation
 
-The application uses a PostgreSQL database with the following main tables:
-- `organizations` - Internal and external organizations
-- `reports` - Scan report metadata
-- `vulnerabilities` - Individual vulnerability findings
-- `hosts` - Scanned host information
+## 🛠️ Development
 
-## Contributing
+### Available Scripts
+
+```bash
+# Development
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+```
+
+### Code Quality
+
+- **TypeScript** for type safety
+- **ESLint** for code quality
+- **Prettier** for code formatting
+<!-- - **Strict mode** enabled -->
+
+<!-- ## 📈 Performance Optimizations
+
+- **Database indexing** for fast queries
+- **Lazy loading** for large datasets
+- **Optimized images** with Next.js Image component
+- **Bundle splitting** for faster page loads
+- **Caching strategies** for API responses -->
+
+<!-- ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## Learn More
+## 📝 License
 
-To learn more about the technologies used:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- [Next.js Documentation](https://nextjs.org/docs) - Learn about Next.js features and API
-- [Supabase Documentation](https://supabase.com/docs) - Learn about Supabase features
-- [TailwindCSS Documentation](https://tailwindcss.com/docs) - Learn about TailwindCSS
+## 👥 Support
 
-## Deployment
+For support, email [support@example.com](mailto:support@example.com) or create an issue in this repository.
 
-### Vercel (Recommended)
+## 🏢 Enterprise Features
 
-The easiest way to deploy is using [Vercel](https://vercel.com/new):
+- **Multi-tenant architecture** ready
+- **SSO integration** capability
+- **Advanced reporting** with custom templates
+- **API endpoints** for external integrations
+- **Compliance reporting** for audit requirements -->
 
-1. Connect your GitHub repository
-2. Add environment variables
-3. Deploy
+---
 
-### Other Platforms
-
-This Next.js application can be deployed on any platform that supports Node.js applications.
+<!-- **Built with ❤️ for cybersecurity professionals** -->
